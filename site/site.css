@@ -56,6 +56,8 @@ a { color: inherit; }
 .section-content p { margin: 0 0 18px; color: #4b6078; font-size: 16px; line-height: 1.85; }
 .section-content p:last-child { margin-bottom: 0; }
 .payment-placeholder { padding: 14px 16px; border-left: 2px solid #69b9da; background: #e8f3f9; color: #405b73 !important; font-size: 13px !important; }
+.payment-page-link { display: inline-flex; align-items: center; gap: 8px; color: var(--blue); font-size: 14px; font-weight: 700; text-decoration: none; }
+.payment-page-link:hover, .payment-page-link:focus-visible { color: var(--navy); text-decoration: underline; }
 .site-footer { min-height: 82px; background: #081d38; color: #b8cada; }
 .footer-inner { min-height: 82px; }
 .footer-brand { color: white; font-size: 15px; }
