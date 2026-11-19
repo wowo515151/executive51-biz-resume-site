@@ -39,6 +39,7 @@ a { color: inherit; }
 .hero h1 { margin: 0; font-size: clamp(52px, 7vw, 86px); line-height: 1.04; letter-spacing: -.075em; }
 .document-title { margin: 10px 0 0; color: #b8d6e7; font-size: 13px; font-weight: 600; }
 .hero-lede { max-width: 520px; margin: 22px 0 26px; color: #d1dfec; font-size: clamp(17px, 2.1vw, 21px); line-height: 1.55; }
+.hero-rate { max-width: 540px; margin: -8px 0 24px; color: #a9d8ea; font-size: 14px; line-height: 1.65; }
 .hero-link { display: inline-flex; align-items: center; gap: 12px; color: #d9f1fb; font-size: 13px; font-weight: 700; text-decoration: none; }
 .hero-link span { color: var(--sky); font-size: 19px; }
 .hero-art { position: relative; justify-self: end; width: min(100%, 380px); }
