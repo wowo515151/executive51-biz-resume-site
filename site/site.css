@@ -16,21 +16,33 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--paper); color: var(--ink); line-height: 1.7; }
+body {
+  margin: 0;
+  background-color: #071a38;
+  background-image:
+    linear-gradient(180deg, rgba(4, 17, 39, .74), rgba(5, 31, 66, .82)),
+    url("assets/Executive51-760.jpg");
+  background-position: center, center 16%;
+  background-size: cover;
+  background-attachment: fixed;
+  color: var(--ink);
+  line-height: 1.7;
+}
 a { color: inherit; }
 .container { width: min(var(--page-width), calc(100% - 64px)); margin-inline: auto; }
 .skip-link { position: absolute; left: 16px; top: -60px; z-index: 10; padding: 10px 14px; border-radius: 6px; background: white; color: var(--navy); }
 .skip-link:focus { top: 12px; }
-.site-header { height: 78px; background: #fff; border-bottom: 1px solid #e8eef4; }
+.site-header { height: 78px; background: rgba(248, 252, 255, .96); border-bottom: 1px solid rgba(117, 191, 226, .42); box-shadow: 0 5px 24px rgba(3, 15, 35, .18); }
 .header-inner, .footer-inner { height: 100%; display: flex; align-items: center; justify-content: space-between; }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--navy); text-decoration: none; font-size: 18px; font-weight: 700; letter-spacing: -.04em; }
 .brand-mark { width: 34px; height: 34px; color: var(--blue); }
-.brand-number, .hero h1 span { color: #43a8d2; }
+.brand-number { color: var(--blue); }
+.hero h1 span { color: #43a8d2; }
 site-nav { display: block; }
 .primary-nav { display: flex; align-items: center; gap: 34px; }
 .primary-nav a { color: #526780; font-size: 13px; font-weight: 600; text-decoration: none; transition: color .2s ease; }
 .primary-nav a:hover, .primary-nav a:focus-visible { color: var(--blue); }
-.hero { color: white; background-color: #0b2345; }
+.hero { color: white; background: linear-gradient(115deg, rgba(5, 22, 49, .98), rgba(8, 49, 91, .9) 58%, rgba(5, 29, 65, .96)); border-bottom: 1px solid rgba(108, 206, 244, .72); box-shadow: 0 10px 35px rgba(1, 12, 30, .28); }
 .hero-inner { position: relative; min-height: 438px; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); align-items: center; gap: 36px; padding-block: 52px; }
 .eyebrow { display: flex; align-items: center; gap: 10px; margin: 0 0 22px; color: #a6d8eb; font-size: 11px; font-weight: 700; letter-spacing: .17em; text-transform: uppercase; }
 .eyebrow-rule { width: 28px; height: 1px; background: var(--sky); }
@@ -44,12 +56,12 @@ site-nav { display: block; }
 .hero-art { position: relative; justify-self: end; width: min(100%, 380px); aspect-ratio: 9 / 7; overflow: hidden; border: 1px solid rgba(154,207,235,.2); border-radius: 14px; background: #06152b; box-shadow: 0 16px 40px rgba(0,0,0,.18); }
 .hero-art svg { display: block; width: 100%; height: 100%; filter: drop-shadow(0 12px 30px rgba(40,160,210,.16)); }
 .hero-art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
-.resume-section { padding-block: 74px; }
-.section-tinted { background: var(--wash); }
-.section-grid { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 44px; }
-.section-index { display: flex; align-items: center; gap: 12px; padding-top: 10px; color: #71839a; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.resume-section { padding-block: 38px; }
+.section-tinted { background: transparent; }
+.section-grid { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 44px; padding: clamp(26px, 4vw, 48px); border: 1px solid rgba(153, 204, 232, .8); border-radius: 16px; background: rgba(250, 253, 255, .97); box-shadow: 0 16px 44px rgba(1, 14, 35, .3), inset 0 1px 0 #fff; }
+.section-index { display: flex; align-items: center; gap: 12px; padding-top: 10px; color: #5b6f86; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .section-index span:first-child { color: var(--blue); font-variant-numeric: tabular-nums; }
-.index-line { width: 24px; height: 1px; background: #9bb4ca; }
+.index-line { width: 36px; height: 2px; background: linear-gradient(90deg, #57d7f4, #268bd5 58%, rgba(38, 139, 213, .12)); box-shadow: 0 0 9px rgba(73, 191, 235, .42); }
 .section-content { max-width: 760px; }
 .section-content h2 { margin: 0 0 18px; color: var(--navy); font-size: clamp(25px, 3vw, 34px); line-height: 1.2; letter-spacing: -.045em; }
 .section-content p { margin: 0 0 18px; color: #4b6078; font-size: 16px; line-height: 1.85; }
@@ -90,7 +102,7 @@ site-nav { display: block; }
 .directory-sources summary { width: fit-content; cursor: pointer; font-weight: 600; text-underline-offset: 3px; }
 .directory-sources ul { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 10px 0 0; padding-left: 18px; }
 .directory-sources a { color: var(--blue); text-underline-offset: 3px; }
-.site-footer { min-height: 82px; background: #081d38; color: #b8cada; }
+.site-footer { min-height: 82px; background: rgba(4, 18, 41, .94); border-top: 1px solid rgba(106, 198, 235, .62); color: #b8cada; }
 .footer-inner { min-height: 82px; }
 .footer-brand { color: white; font-size: 15px; }
 .footer-inner p { margin: 0; color: #93a9be; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
@@ -103,7 +115,7 @@ site-nav { display: block; }
   .primary-nav a { font-size: 12px; }
   .hero-inner { min-height: 0; grid-template-columns: minmax(0, 1fr) 220px; gap: 6px; padding-block: 66px 58px; }
   .hero-art { width: 250px; margin-right: -32px; }
-  .resume-section { padding-block: 58px; }
+  .resume-section { padding-block: 22px; }
   .section-grid { grid-template-columns: 1fr; gap: 16px; }
   .section-index { padding-top: 0; }
 }
@@ -118,7 +130,7 @@ site-nav { display: block; }
   .hero h1 { font-size: clamp(54px, 16vw, 76px); }
   .hero-lede { max-width: 340px; }
   .hero-art { width: 210px; margin: 20px -8px -22px auto; }
-  .resume-section { padding-block: 48px; }
+  .resume-section { padding-block: 18px; }
   .section-content p { font-size: 15px; line-height: 1.78; }
   .contact-methods { grid-template-columns: 1fr; }
   .contact-card { padding: 18px; }
