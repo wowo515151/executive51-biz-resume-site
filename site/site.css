@@ -19,10 +19,8 @@ html { scroll-behavior: smooth; }
 body {
   margin: 0;
   background-color: #071a38;
-  background-image:
-    linear-gradient(180deg, rgba(4, 17, 39, .74), rgba(5, 31, 66, .82)),
-    url("assets/Executive51-760.jpg");
-  background-position: center, center 16%;
+  background-image: url("assets/Executive51-760.jpg");
+  background-position: center 16%;
   background-size: cover;
   background-attachment: fixed;
   color: var(--ink);
