@@ -40,8 +40,8 @@ a { color: inherit; }
 .hero-rate { max-width: 540px; margin: -8px 0 24px; color: #a9d8ea; font-size: 14px; line-height: 1.65; }
 .hero-link { display: inline-flex; align-items: center; gap: 12px; color: #d9f1fb; font-size: 13px; font-weight: 700; text-decoration: none; }
 .hero-link span { color: var(--sky); font-size: 19px; }
-.hero-art { position: relative; justify-self: end; width: min(100%, 380px); }
-.hero-art svg { display: block; width: 100%; filter: drop-shadow(0 12px 30px rgba(40,160,210,.16)); }
+.hero-art { position: relative; justify-self: end; width: min(100%, 380px); aspect-ratio: 9 / 7; overflow: hidden; border: 1px solid rgba(154,207,235,.2); border-radius: 14px; background: #06152b; box-shadow: 0 16px 40px rgba(0,0,0,.18); }
+.hero-art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
 .resume-section { padding-block: 74px; }
 .section-tinted { background: var(--wash); }
 .section-grid { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 44px; }
