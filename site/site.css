@@ -44,7 +44,6 @@ a { color: inherit; }
 .hero-link span { color: var(--sky); font-size: 19px; }
 .hero-art { position: relative; justify-self: end; width: min(100%, 380px); }
 .hero-art svg { display: block; width: 100%; filter: drop-shadow(0 12px 30px rgba(40,160,210,.16)); }
-.art-caption { position: absolute; right: 2px; bottom: 18px; color: #a9c4d9; font-size: 10px; letter-spacing: .19em; text-transform: uppercase; }
 .hero-bottom-line { position: absolute; right: 0; bottom: 0; left: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(137,211,238,.7), transparent); }
 .resume-section { padding-block: 74px; }
 .section-tinted { background: var(--wash); }
@@ -77,7 +76,6 @@ a { color: inherit; }
   .primary-nav a { font-size: 12px; }
   .hero-inner { min-height: 0; grid-template-columns: minmax(0, 1fr) 220px; gap: 6px; padding-block: 66px 58px; }
   .hero-art { width: 250px; margin-right: -32px; }
-  .art-caption { right: 24px; bottom: 8px; font-size: 8px; }
   .resume-section { padding-block: 58px; }
   .section-grid { grid-template-columns: 1fr; gap: 16px; }
   .section-index { padding-top: 0; }
@@ -93,7 +91,6 @@ a { color: inherit; }
   .hero h1 { font-size: clamp(54px, 16vw, 76px); }
   .hero-lede { max-width: 340px; }
   .hero-art { width: 210px; margin: 20px -8px -22px auto; }
-  .art-caption { right: 9px; bottom: 7px; }
   .resume-section { padding-block: 48px; }
   .section-content p { font-size: 15px; line-height: 1.78; }
   .footer-inner { align-items: flex-start; flex-direction: column; justify-content: center; gap: 6px; padding-block: 18px; }
