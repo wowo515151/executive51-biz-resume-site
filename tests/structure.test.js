@@ -3,7 +3,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const site = path.resolve(__dirname, "..");
+const site = path.resolve(__dirname, "..", "site");
 const read = (name) => fs.readFileSync(path.join(site, name), "utf8");
 
 test("graph entry links reviewed provider pages, each with three unique data pages", () => {

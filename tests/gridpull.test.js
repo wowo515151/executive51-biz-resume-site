@@ -1,7 +1,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
-require("../gridpull.js");
+require("../site/gridpull.js");
 
 test("CSV parser handles quoted separators, escaped quotes, and blank cells", () => {
   const table = Gridpull.parseCSV('name,value,note\r\n"A, B",12,"x ""quoted"""\r\nC,,last');
