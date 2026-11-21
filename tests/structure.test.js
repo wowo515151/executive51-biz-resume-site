@@ -55,6 +55,18 @@ test("cross-sectional direct pages and loader paths are disabled", () => {
   assert.ok(loader.includes("isTimeSeriesTable(table"));
   assert.ok(component.includes('this.getAttribute("data-time-series") !== "true"'));
   assert.ok(component.includes("TIME_SERIES_TYPES"));
+  const disabledPages = [
+    ["DataCNFNutrientAmounts.html", "healthcanada", "gouda"],
+    ["DataCNFSalmon.html", "healthcanada", "salmon"],
+    ["DataCNFApple.html", "healthcanada", "apple"],
+    ["DataQuebecMunicipalPopulation.html", "quebec", "municipalities"],
+    ["DataQuebecMunicipalFinance.html", "quebec", "finances"]
+  ];
+  for (const [name, siteId, datasetId] of disabledPages) {
+    const html = read(name);
+    assert.match(html, new RegExp(`<body[^>]*data-site="${siteId}"[^>]*data-dataset="${datasetId}"`), `${name} keeps its disabled dataset route`);
+    assert.equal(html.includes('data-time-series="true"'), false, `${name} cannot enable the time-series graph`);
+  }
   for (const name of fs.readdirSync(site).filter((file) => /^Data.*\.html$/.test(file) && !activePages.includes(file))) {
     assert.match(read(name), /gridpull\.js\?v=timeseries-20261121/);
     assert.match(read(name), /graph-data\.js\?v=timeseries-20261121/);

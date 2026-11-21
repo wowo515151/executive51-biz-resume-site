@@ -122,9 +122,15 @@ test("unverified dataset cannot make a network request", async () => {
 test("cross-sectional datasets are disabled before any provider request", async () => {
   let requests = 0;
   const fetch = () => { requests++; throw new Error("network should not be reached"); };
-  await assert.rejects(Gridpull.load("healthcanada", "gouda", { fetch }), /disabled.*time-series/i);
-  await assert.rejects(Gridpull.load("quebec", "municipalities", { fetch }), /disabled.*time-series/i);
-  await assert.rejects(Gridpull.load("quebec", "finances", { fetch }), /disabled.*time-series/i);
+  for (const [site, dataset] of [
+    ["healthcanada", "gouda"],
+    ["healthcanada", "salmon"],
+    ["healthcanada", "apple"],
+    ["quebec", "municipalities"],
+    ["quebec", "finances"]
+  ]) {
+    await assert.rejects(Gridpull.load(site, dataset, { fetch }), /disabled.*time-series/i, `${site}/${dataset} must not fetch`);
+  }
   await assert.rejects(Gridpull.load("healthcanada", "foods", { fetch }), /disabled.*time-series/i);
   assert.equal(requests, 0);
 });
