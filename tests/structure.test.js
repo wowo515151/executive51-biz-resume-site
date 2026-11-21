@@ -22,7 +22,7 @@ test("graph entry links reviewed provider pages, each with eligible unique data 
       const description = dataPage.match(/<p class="graph-description" data-dataset-description>(.*?)<\/p>/)?.[1];
       assert.ok(description && html.includes(description), `${provider} includes ${link}'s dataset description`);
       assert.match(dataPage, /data-dataset-source href="https:\/\//, `${link} links to its official source`);
-      assert.match(dataPage, /<a class="graph-source-link" data-dataset-source href="https:\/\/[^\"]+" rel="noopener noreferrer">[^<]+<\/a>(?:\s*<a class="graph-source-link" href="https:\/\/[^\"]+" rel="noopener noreferrer">[^<]+<\/a>)?<p class="(?:graph-note|graph-attribution)">/, `${link} closes its source links before attribution`);
+      assert.match(dataPage, /<a class="graph-source-link" data-dataset-source href="https:\/\/[^\"]+" rel="noopener noreferrer">[^<]+<\/a>(?:\s*<a class="graph-source-link" href="https:\/\/[^\"]+" rel="noopener noreferrer">[^<]+<\/a>){0,2}<p class="(?:graph-note|graph-attribution)">/, `${link} closes its source links before attribution`);
     }
   }
 });
@@ -42,7 +42,8 @@ test("seven graphable DataPages use shared panels and the homepage links only to
     }
   }
   assert.ok(read("SiteHealthCanada.html").includes("https://open.canada.ca/data/en/dataset/1b6139bd-ed7e-4043-bc28-ff00e10f3109"), "Health Canada SitePage links the official CNF record");
-  const graphComponent = read("GridGraph.1925936.js");
+  assert.ok(read("DataCNFNutrientAmounts.html").includes("https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&amp;type=json"), "nutrient graph links the official unit definitions it joins");
+  const graphComponent = read("GridGraph.c254e31.js");
   assert.ok(graphComponent.includes("graphableNumericIndexes"), "the graph component admits only explicitly approved numeric measures");
   assert.ok(graphComponent.includes('getAttribute("data-graphable-y")'), "the measure whitelist is set per dataset");
   for (const mode of ["bar", "line", "area", "scatter", "pie", "heatmap", "surface3d"]) assert.ok(graphComponent.includes(`"${mode}"`), `GridGraph exposes ${mode}`);
@@ -65,7 +66,7 @@ test("seven graphable DataPages use shared panels and the homepage links only to
 });
 
 test("GridGraph exposes accessible field selectors and avoids defaulting to identifier-like measures", () => {
-  const graphComponent = read("GridGraph.1925936.js");
+  const graphComponent = read("GridGraph.c254e31.js");
   assert.ok(graphComponent.includes('aria-label", "Category or X axis"'), "the category axis selector has an accessible label");
   assert.ok(graphComponent.includes('className = "series"'), "numeric series choices are grouped accessibly");
   assert.ok(graphComponent.includes("const MEASURE_HINT"), "identifier-like numeric columns are not selected by default");
@@ -75,6 +76,9 @@ test("GridGraph exposes accessible field selectors and avoids defaulting to iden
   assert.ok(graphComponent.includes("safePlotlyText(String(row[xIndex] ?? index + 1).slice(0, 100))"), "provider category labels are escaped before reaching Plotly");
   assert.ok(graphComponent.includes("name: safePlotlyText(columns[index])"), "provider field names are escaped before reaching Plotly");
   assert.ok(read("DataCNFNutrientAmounts.html").includes('data-default-x="nutrient_web_name" data-default-y="nutrient_value"'), "nutrient chart defaults to the named nutrient value series");
+  assert.ok(graphComponent.includes('getAttribute("data-unit-field")'), "nutrient charts can filter plotted observations by official units");
+  assert.ok(graphComponent.includes("Measurement unit"), "unit selector explains its control purpose");
+  assert.ok(read("DataCNFNutrientAmounts.html").includes('data-default-unit="g"'), "nutrient chart defaults to grams per 100 grams");
 });
 
 test("all dataset pages request the current versioned GridGraph asset", () => {

@@ -23,7 +23,7 @@
       datasets: {
         foods: { name: "Foods in the Canadian Nutrient File", description: "Food codes and labels are reference identifiers and names, not numeric measures. This table is not offered as a graph dataset.", format: "json", graphableFields: [], sourceUrl: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/food/?lang=en&type=json", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/food/?lang=en&type=json", verified: true },
         nutrients: { name: "Nutrient names and units", description: "Nutrient identifiers, names, units, and order fields describe the file structure, not numeric observations. This table is not offered as a graph dataset.", format: "json", graphableFields: [], sourceUrl: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&type=json", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&type=json", verified: true },
-        gouda: { name: "Nutrient amounts in Gouda cheese", description: "Review the nutrient measurements recorded for the Canadian Nutrient File's Gouda cheese example (food code 109). The API guide describes these values per 100 grams of edible portion and includes the nutrient name, value, unit context, and supporting observation fields. This reference composition is not a personalized dietary recommendation; check Health Canada's notes when comparing individual nutrient values.", format: "json", graphableFields: ["nutrient_value"], sourceUrl: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json", verified: true }
+        gouda: { name: "Nutrient amounts in Gouda cheese", description: "Review numeric nutrient measurements for the Canadian Nutrient File's Gouda cheese example (food code 109). The graph begins with values measured in grams per 100 grams and lets you select another reported unit. Check the selected unit when comparing nutrient categories. This reference composition is not personalized dietary advice.", format: "json", graphableFields: ["nutrient_value"], unitField: "unit", defaultUnit: "g", unitSourceURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&type=json", sourceUrl: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json", verified: true }
       }
     },
     quebec: {
@@ -215,8 +215,22 @@
       if (declared > MAX_BYTES) throw new Error("Dataset exceeds the 5 MB limit.");
       const text = await readBounded(response);
       const json = info.dataset.format === "json" ? JSON.parse(text) : null;
-      const table = info.dataset.format === "csv" ? parseCSV(text) : info.dataset.schema === "statcan-wds" ? normalizeStatCanWDS(json, info.dataset.request.productId) : info.dataset.schema === "ckan-datastore" ? normalizeCKANDatastore(json, info.dataset.request) : normalizeJSON(json);
-      if (!isGraphableTable(table, info.dataset.graphableFields)) throw new Error("The source did not return at least two numeric observations in an approved graph measure. This dataset was not displayed.");
+      let table = info.dataset.format === "csv" ? parseCSV(text) : info.dataset.schema === "statcan-wds" ? normalizeStatCanWDS(json, info.dataset.request.productId) : info.dataset.schema === "ckan-datastore" ? normalizeCKANDatastore(json, info.dataset.request) : normalizeJSON(json);
+      if (info.dataset.unitSourceURL) {
+        const unitResponse = await (options.fetch || fetch)(info.dataset.unitSourceURL, { mode: "cors", credentials: "omit", signal: controller.signal, headers: { Accept: "application/json" } });
+        if (!unitResponse.ok) throw new Error(`Health Canada unit definitions returned HTTP ${unitResponse.status}.`);
+        const unitContentType = (unitResponse.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+        if (unitContentType !== "application/json" && unitContentType !== "text/json") throw new Error("Health Canada returned an unexpected nutrient-unit format.");
+        const unitText = await readBounded(unitResponse);
+        const unitTable = normalizeJSON(JSON.parse(unitText));
+        const idIndex = unitTable.columns.indexOf("nutrient_name_id"), unitIndex = unitTable.columns.indexOf("unit");
+        const amountIdIndex = table.columns.indexOf("nutrient_name_id");
+        if (idIndex < 0 || unitIndex < 0 || amountIdIndex < 0) throw new Error("Health Canada's nutrient-unit fields did not match the reviewed CNF schema.");
+        const unitMap = new Map(unitTable.rows.map((row) => [String(row[idIndex]), String(row[unitIndex] || "")]));
+        if (table.rows.some((row) => !unitMap.get(String(row[amountIdIndex] ?? "")))) throw new Error("Health Canada did not provide a unit for every nutrient measurement.");
+        table = { columns: [...table.columns, info.dataset.unitField], rows: table.rows.map((row) => [...row, unitMap.get(String(row[amountIdIndex]))]) };
+      }
+      if (!isGraphableTable(table, info.dataset.graphableFields)) throw new Error("The source did not return a numeric observation in an approved graph measure. This dataset was not displayed.");
       return { ...table, source: info.site, dataset: info.dataset };
     } catch (error) {
       if (controller.signal.aborted && controller.signal.reason instanceof Error) throw controller.signal.reason;

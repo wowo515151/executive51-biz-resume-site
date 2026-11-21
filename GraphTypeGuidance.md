@@ -6,7 +6,7 @@ This document defines which graph types are suitable for the current data and wh
 
 - Text labels and identifiers can be category values; they are never numeric measures by themselves. A food code such as `109`, a year, an order number, or a numeric-looking field code is not a graph measure unless the dataset definition explicitly approves it.
 - Each dataset lists its approved measure columns. Other numeric fields remain in the table preview but do not appear in the graph measure controls.
-- The loader checks that an approved measure is present and contains at least one numeric observation before it returns the dataset to the page.
+- The loader checks that an approved measure is present and contains a numeric observation before it returns the dataset to the page.
 - A chart type is enabled only when the data shape and meaning support it. The default is the clearest suitable view for that dataset.
 - Time range controls default to the earliest and latest observations returned. The initial graph therefore displays the complete loaded period. Changing either date filters the plotted observations inclusively and leaves the source table preview intact.
 
@@ -29,7 +29,7 @@ This document defines which graph types are suitable for the current data and wh
 | Statistics Canada population estimates | `Value` | Line by default; line, bar, area, scatter. Full loaded date range is selected initially. |
 | Statistics Canada labour force | `Value` | Line by default; line, bar, area, scatter. Full loaded date range is selected initially. |
 | Statistics Canada consumer prices | `Value` | Line by default; line, bar, area, scatter. Full loaded date range is selected initially. |
-| Health Canada Gouda nutrient amounts | `nutrient_value` | Bar only. Nutrient labels are categories; consult the unit column before comparing different nutrients. |
+| Health Canada Gouda nutrient amounts | `nutrient_value` | Bar only. A unit selector starts at grams; only observations with the selected unit are plotted, the unit appears on the value axis, and the table preview keeps all units. |
 | Québec municipal population and area | `mpopul`, `msuperf` | Bar only. Use one measure at a time because population and area have different units. |
 | Québec population projections | `TousLesAges` | Bar only in the current ungrouped table view. A line view requires a single selected territory, data type, and sex with rows ordered by year. |
 | Québec municipal financial profile | `population` | Bar only. Unmapped `FIALX…` fields are excluded from measures until their definitions are reviewed. |

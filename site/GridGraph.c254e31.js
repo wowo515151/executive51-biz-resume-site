@@ -162,6 +162,9 @@
       });
 
       const fields = document.createElement("div"); fields.className = "fields";
+      this._unitLabel = document.createElement("label"); this._unitLabel.textContent = "Measurement unit";
+      this._unitSelect = document.createElement("select"); this._unitSelect.setAttribute("aria-label", "Measurement unit");
+      this._unitSelect.addEventListener("change", () => this.draw()); this._unitLabel.append(this._unitSelect); this._unitLabel.hidden = true;
       const xLabel = document.createElement("label"); xLabel.textContent = "Category or X axis";
       this._xLabel = xLabel;
       this._xSelect = document.createElement("select"); this._xSelect.setAttribute("aria-label", "Category or X axis");
@@ -170,7 +173,7 @@
       this._seriesLegend = document.createElement("legend"); this._seriesLegend.textContent = "Numeric series"; series.append(this._seriesLegend);
       this._seriesOptions = document.createElement("span"); this._seriesOptions.className = "series-options"; series.append(this._seriesOptions);
       this._fieldNote = document.createElement("p"); this._fieldNote.className = "field-note"; this._fieldNote.setAttribute("role", "status");
-      fields.append(xLabel, series, this._fieldNote);
+      fields.append(this._unitLabel, xLabel, series, this._fieldNote);
 
       const period = document.createElement("div"); period.className = "fields time-period";
       period.setAttribute("role", "group"); period.setAttribute("aria-label", "Time period");
@@ -191,6 +194,17 @@
     updateFieldControls() {
       if (!this._xSelect || !this._seriesOptions) return;
       const columns = this.table.columns || [], rows = this.table.rows || [];
+      const unitField = this.getAttribute("data-unit-field") || "";
+      const unitIndex = columns.indexOf(unitField);
+      const previousUnit = this._unitSelect?.value || "";
+      if (this._unitSelect && this._unitLabel) {
+        const unitValues = unitIndex < 0 ? [] : [...new Set(rows.map((row) => String(row[unitIndex] ?? "").trim()).filter(Boolean))].sort();
+        this._unitSelect.replaceChildren();
+        unitValues.forEach((unit) => { const option = document.createElement("option"); option.value = unit; option.textContent = unit; this._unitSelect.append(option); });
+        const requestedUnit = this.getAttribute("data-default-unit");
+        this._unitSelect.value = unitValues.includes(previousUnit) ? previousUnit : unitValues.includes(requestedUnit) ? requestedUnit : (unitValues[0] || "");
+        this._unitLabel.hidden = unitValues.length < 2;
+      }
       const timeSeries = this.getAttribute("data-time-series") === "true" && columns.length === 2 && columns[0] === "Reference period";
       const oldX = this._xSelect.value;
       const previousY = new Set([...this._seriesOptions.querySelectorAll("input:checked")].map((input) => input.value));
@@ -252,6 +266,9 @@
       if (!this._plot) return;
       const columns = this.table.columns || [];
       let rows = (this.table.rows || []).slice(0, 2000);
+      const unitField = this.getAttribute("data-unit-field") || "";
+      const unitIndex = columns.indexOf(unitField);
+      if (unitIndex >= 0 && this._unitSelect?.value) rows = rows.filter((row) => String(row[unitIndex] ?? "").trim() === this._unitSelect.value);
       if (this.getAttribute("data-time-series") === "true" && columns.length === 2 && columns[0] === "Reference period" && this._periodStart?.value && this._periodEnd?.value) {
         rows = rows.filter((row) => { const date = periodDate(row[0]); return date && date >= this._periodStart.value && date <= this._periodEnd.value; });
       }
@@ -312,7 +329,10 @@
       }
       const labelMargin = horizontalBars ? Math.min(300, Math.max(140, Math.ceil(Math.max(...labels.map((label) => label.length)) * 6))) : 58;
       const surfaceXAxisTicks = surfaceAxisTicks ? { type: "linear", tickmode: "array", tickvals: surfaceAxisTicks.xTickValues, ticktext: surfaceAxisTicks.xTickText } : {};
-      const layout = { autosize: true, height: horizontalBars ? Math.min(2200, Math.max(620, rows.length * 18)) : 420, margin: { l: labelMargin, r: 24, t: 28, b: horizontalBars ? 60 : 90 }, paper_bgcolor: "#fff", plot_bgcolor: "#fff", font: { color: "#172b49" }, legend: { orientation: "h", y: -0.24 }, xaxis: { automargin: true, title: horizontalBars ? safePlotlyText(columns[indexes[0]]) : undefined, tickangle: labels.length > 12 && !horizontalBars ? -45 : 0 }, yaxis: { automargin: true, title: horizontalBars ? safePlotlyText(columns[xIndex]) : undefined }, ...(is3d ? { scene: { xaxis: { title: surfaceFallback ? "Row" : safePlotlyText(columns[xIndex]), ...surfaceXAxisTicks }, yaxis: { title: surfaceFallback ? "Numeric series" : "Series" }, zaxis: { title: "Value" } } } : {}), ...(this.type === "bar" ? { barmode: "group" } : {}) };
+      const measureTitle = this.getAttribute("data-measure-label") || columns[indexes[0]];
+      const selectedUnit = this._unitSelect?.value;
+      const valueAxisTitle = safePlotlyText(`${measureTitle}${selectedUnit ? ` (${selectedUnit})` : ""}`);
+      const layout = { autosize: true, height: horizontalBars ? Math.min(2200, Math.max(620, rows.length * 18)) : 420, margin: { l: labelMargin, r: 24, t: 28, b: horizontalBars ? 60 : 90 }, paper_bgcolor: "#fff", plot_bgcolor: "#fff", font: { color: "#172b49" }, legend: { orientation: "h", y: -0.24 }, xaxis: { automargin: true, title: horizontalBars ? safePlotlyText(columns[indexes[0]]) : undefined, tickangle: labels.length > 12 && !horizontalBars ? -45 : 0 }, yaxis: { automargin: true, title: horizontalBars ? safePlotlyText(columns[xIndex]) : valueAxisTitle }, ...(is3d ? { scene: { xaxis: { title: surfaceFallback ? "Row" : safePlotlyText(columns[xIndex]), ...surfaceXAxisTicks }, yaxis: { title: surfaceFallback ? "Numeric series" : "Series" }, zaxis: { title: "Value" } } } : {}), ...(this.type === "bar" ? { barmode: "group" } : {}) };
       this._plot.querySelector(".note")?.remove();
       this._plot.style.height = `${layout.height}px`;
       this._plot.setAttribute("aria-label", `${this.type} graph for ${rows.length} table rows using ${indexes.length} numeric field${indexes.length === 1 ? "" : "s"}`);

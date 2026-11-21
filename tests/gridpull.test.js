@@ -116,6 +116,33 @@ test("label-only food dataset is rejected before a provider request", async () =
   await assert.rejects(Gridpull.load("healthcanada", "foods", { fetch: () => { throw new Error("network should not be reached"); } }), /no approved numeric measure/);
 });
 
+test("CNF nutrient amounts join official unit definitions for comparable graphing", async () => {
+  const requests = [];
+  const amountRows = [
+    { nutrient_name_id: 203, nutrient_value: 24.94, nutrient_web_name: "Protein" },
+    { nutrient_name_id: 208, nutrient_value: 357, nutrient_web_name: "Energy (kcal)" }
+  ];
+  const unitRows = [
+    { nutrient_name_id: 203, unit: "g" },
+    { nutrient_name_id: 208, unit: "kcal" }
+  ];
+  const fetch = async (url) => {
+    requests.push(url);
+    const body = JSON.stringify(url.includes("nutrientname") ? unitRows : amountRows);
+    return {
+      ok: true,
+      headers: { get: (name) => name.toLowerCase() === "content-type" ? "application/json; charset=utf-8" : null },
+      body: new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(body)); controller.close(); } })
+    };
+  };
+  const table = await Gridpull.load("healthcanada", "gouda", { fetch });
+  assert.equal(requests.length, 2);
+  assert.ok(requests[1].includes("nutrientname"));
+  assert.equal(table.columns.at(-1), "unit");
+  assert.deepEqual(table.rows.map((row) => row.at(-1)), ["g", "kcal"]);
+  assert.equal(Gridpull.isGraphableTable(table, ["nutrient_value"]), true);
+});
+
 test("verified Statistics Canada dataset uses anonymous WDS POST and normalizes observations", async () => {
   let request;
   const body = JSON.stringify([{ status: "SUCCESS", object: {
