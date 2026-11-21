@@ -21,6 +21,12 @@ test("JSON normalizer accepts the CNF result envelope", () => {
   assert.deepEqual(table.rows, [["109", "12.5"]]);
 });
 
+test("JSON normalizer reads nested record results with field metadata", () => {
+  const table = Gridpull.normalizeJSON({ success: true, result: { records: [{ date: "2026-01", value: 7 }], fields: [{ id: "date" }, { id: "value" }] } });
+  assert.deepEqual(table.columns, ["date", "value"]);
+  assert.deepEqual(table.rows, [["2026-01", "7"]]);
+});
+
 test("JSON normalizer preserves cells in uneven array rows", () => {
   const table = Gridpull.normalizeJSON([["Jan", 10], ["Feb", 12, "revised"]]);
   assert.deepEqual(table.columns, ["Column 1", "Column 2", "Column 3"]);

@@ -78,7 +78,20 @@
     return { columns, rows: rows.map((r) => columns.map((_, i) => String(r[i] ?? "").slice(0, 20_000))) };
   }
   function normalizeJSON(json) {
-    let values = Array.isArray(json) ? json : json && (json.data || json.result || json.observations || json.value);
+    function findRows(value, depth = 0) {
+      if (Array.isArray(value)) return value;
+      if (!value || typeof value !== "object" || depth >= 5) return null;
+      for (const key of ["records", "data", "result", "observations", "value", "vectorDataPoint", "object"]) {
+        if (Array.isArray(value[key])) return value[key];
+      }
+      for (const key of ["result", "data", "object", "value"]) {
+        const rows = findRows(value[key], depth + 1);
+        if (rows) return rows;
+      }
+      return null;
+    }
+    let values = findRows(json);
+    if (!values && json && typeof json === "object") values = Object.values(json);
     if (values && !Array.isArray(values) && typeof values === "object") values = Object.values(values);
     if (!Array.isArray(values)) throw new Error("The response does not contain a tabular array.");
     if (values.length > MAX_ROWS) throw new Error("Dataset exceeds the row limit.");
