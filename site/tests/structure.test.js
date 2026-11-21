@@ -55,3 +55,9 @@ test("GridGraph exposes accessible field selectors and avoids defaulting to iden
   assert.ok(graphComponent.includes("const MEASURE_HINT"), "identifier-like numeric columns are not selected by default");
   assert.ok(read("DataCNFNutrientAmounts.html").includes('data-default-x="nutrient_web_name" data-default-y="nutrient_value"'), "nutrient chart defaults to the named nutrient value series");
 });
+
+test("Azure deployment pins checkout immutably and does not persist its token", () => {
+  const workflow = fs.readFileSync(path.resolve(site, "..", ".github", "workflows", "azure-static-web-apps.yml"), "utf8");
+  assert.match(workflow, /uses: actions\/checkout@[a-f0-9]{40}/, "checkout uses a full commit SHA");
+  assert.match(workflow, /persist-credentials: false/, "the deployment job does not retain the checkout token");
+});
