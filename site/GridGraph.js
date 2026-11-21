@@ -155,6 +155,7 @@
         const result = create3DTrace(rows, columns, indexes, labels);
         traces.push(result.trace);
         if (result.fallback) this._fieldNote.textContent = "A 3D surface needs at least two selected numeric measures and two rows. Showing the available values as labeled 3D points.";
+        else this._fieldNote.textContent = "A 3D surface connects values across row categories and selected measures; categories may not be continuous and measures may not share units.";
       } else if (this.type === "scatter") {
         const xValues = rows.map((row, index) => row[xIndex] ?? index + 1);
         indexes.forEach((index) => traces.push({ type: "scatter", mode: "markers", name: columns[index], x: xValues, y: rows.map((row) => numeric(row[index])) }));
