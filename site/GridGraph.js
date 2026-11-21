@@ -86,6 +86,7 @@
       }
       const is3d = this.type === "surface3d";
       const layout = { autosize: true, height: 420, margin: { l: 58, r: 24, t: 28, b: 90 }, paper_bgcolor: "#fff", plot_bgcolor: "#fff", font: { color: "#172b49" }, legend: { orientation: "h", y: -0.24 }, xaxis: { automargin: true, tickangle: labels.length > 12 ? -45 : 0 }, yaxis: { automargin: true }, ...(is3d ? { scene: { xaxis: { title: "Rows" }, yaxis: { title: "Columns" }, zaxis: { title: "Value" } } } : {}), ...(this.type === "bar" ? { barmode: "group" } : {}) };
+      this._plot.querySelector(".note")?.remove();
       this._plot.setAttribute("aria-label", `${this.type} graph for ${rows.length} table rows`);
       root.Plotly.react(this._plot, traces, layout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ["sendDataToCloud"] });
     }
