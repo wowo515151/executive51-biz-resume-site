@@ -112,7 +112,7 @@
       const traces = [];
       if (this.type === "pie") {
         const index = indexes[0];
-        traces.push({ type: "pie", labels, values: rows.map((row) => Math.max(0, numeric(row[index]) ?? 0)), hole: 0.25, textinfo: "label+percent", hovertemplate: "%{label}<br>%{value}<extra></extra>" });
+        traces.push({ type: "pie", labels, values: rows.map((row) => Math.max(0, numeric(row[index]) ?? 0)), hole: 0.25, textinfo: labels.length > 20 ? "none" : "label+percent", hovertemplate: "%{label}<br>%{value}<extra></extra>" });
       } else if (this.type === "heatmap" || this.type === "surface3d") {
         const x = labels;
         const y = indexes.map((index) => columns[index]);
