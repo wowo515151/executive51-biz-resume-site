@@ -121,6 +121,7 @@
     }
     message(text, isError = false) {
       if (root.Plotly) root.Plotly.purge(this._plot);
+      this._plot.style.height = "";
       this._plot.replaceChildren();
       const p = document.createElement("p"); p.className = isError ? "note error" : "note"; p.textContent = text; this._plot.append(p);
     }
@@ -167,6 +168,7 @@
       const surfaceFallback = this.type === "surface3d" && (rows.length < 2 || indexes.length < 2);
       const layout = { autosize: true, height: horizontalBars ? Math.min(2200, Math.max(620, rows.length * 18)) : 420, margin: { l: labelMargin, r: 24, t: 28, b: horizontalBars ? 60 : 90 }, paper_bgcolor: "#fff", plot_bgcolor: "#fff", font: { color: "#172b49" }, legend: { orientation: "h", y: -0.24 }, xaxis: { automargin: true, title: horizontalBars ? columns[indexes[0]] : undefined, tickangle: labels.length > 12 && !horizontalBars ? -45 : 0 }, yaxis: { automargin: true, title: horizontalBars ? columns[xIndex] : undefined }, ...(is3d ? { scene: { xaxis: { title: surfaceFallback ? "Row" : columns[xIndex] }, yaxis: { title: surfaceFallback ? "Numeric series" : "Series" }, zaxis: { title: "Value" } } } : {}), ...(this.type === "bar" ? { barmode: "group" } : {}) };
       this._plot.querySelector(".note")?.remove();
+      this._plot.style.height = `${layout.height}px`;
       this._plot.setAttribute("aria-label", `${this.type} graph for ${rows.length} table rows using ${indexes.length} numeric field${indexes.length === 1 ? "" : "s"}`);
       root.Plotly.react(this._plot, traces, layout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ["sendDataToCloud"] });
     }
