@@ -21,7 +21,7 @@ test("graph entry links reviewed provider pages, each with three unique data pag
       const description = dataPage.match(/<p class="graph-description" data-dataset-description>(.*?)<\/p>/)?.[1];
       assert.ok(description && html.includes(description), `${provider} includes ${link}'s dataset description`);
       assert.match(dataPage, /data-dataset-source href="https:\/\//, `${link} links to its official source`);
-      assert.match(dataPage, /<a class="graph-source-link" data-dataset-source href="https:\/\/[^\"]+" rel="noopener noreferrer">[^<]+<\/a><p class="(?:graph-note|graph-attribution)">/, `${link} closes its source link before attribution`);
+      assert.match(dataPage, /<a class="graph-source-link" data-dataset-source href="https:\/\/[^\"]+" rel="noopener noreferrer">[^<]+<\/a>(?:\s*<a class="graph-source-link" href="https:\/\/[^\"]+" rel="noopener noreferrer">[^<]+<\/a>)?<p class="(?:graph-note|graph-attribution)">/, `${link} closes its source links before attribution`);
     }
   }
 });
@@ -34,7 +34,11 @@ test("nine selected DataPages include the shared graph panel structure and no ho
     for (const marker of ["data-site=", "data-dataset=", "data-dataset-description", "grid-graph", "graph-ad-panel", "data-load-dataset", "<footer"]) {
       assert.ok(html.includes(marker), `${name} includes ${marker}`);
     }
+    if (html.includes('data-site="healthcanada"')) {
+      assert.ok(html.includes("https://open.canada.ca/data/en/dataset/1b6139bd-ed7e-4043-bc28-ff00e10f3109"), `${name} links the official Health Canada CNF record`);
+    }
   }
+  assert.ok(read("SiteHealthCanada.html").includes("https://open.canada.ca/data/en/dataset/1b6139bd-ed7e-4043-bc28-ff00e10f3109"), "Health Canada SitePage links the official CNF record");
   const graphComponent = read("GridGraph.js");
   for (const mode of ["bar", "line", "area", "scatter", "pie", "heatmap", "surface3d"]) assert.ok(graphComponent.includes(`"${mode}"`), `GridGraph exposes ${mode}`);
   assert.equal(read("index.html").includes("graph.html"), false, "existing homepage remains unlinked until review");
