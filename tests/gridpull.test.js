@@ -60,11 +60,7 @@ test("JSON normalizer enforces row and column limits", () => {
 test("selected registry exposes three reviewed sites and three datasets per site", () => {
   const sites = Gridpull.listSites();
   assert.equal(sites.length, 3);
-  const verifiedCNF = {
-    foods: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/food/?lang=en&type=json",
-    nutrients: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&type=json",
-    gouda: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json"
-  };
+  const verifiedCNF = { gouda: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json" };
   const verifiedStatCan = {
     population: { productId: 17100009, coordinate: "1.0.0.0.0.0.0.0.0.0", latestN: 100 },
     labour: { productId: 14100287, coordinate: "1.3.1.1.1.1.0.0.0.0", latestN: 100 },
@@ -77,17 +73,28 @@ test("selected registry exposes three reviewed sites and three datasets per site
   };
   for (const site of sites) {
     const datasets = Gridpull.listDatasets(site.id);
-    assert.equal(datasets.length, 3);
+    assert.equal(datasets.length, site.id === "healthcanada" ? 1 : 3);
     for (const dataset of datasets) {
       const expectedURL = site.id === "healthcanada" ? verifiedCNF[dataset.id] : site.id === "statcan" && verifiedStatCan[dataset.id] ? "https://www150.statcan.gc.ca/t1/wds/rest/getDataFromCubePidCoordAndLatestNPeriods" : site.id === "quebec" ? "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search" : null;
       assert.equal(dataset.verified, Boolean(expectedURL), `${site.id}/${dataset.id} verification state matches source evidence`);
       assert.equal(dataset.fetchURL, expectedURL, `${site.id}/${dataset.id} uses only its verified official endpoint`);
+      assert.ok(dataset.graphableFields.length > 0, `${site.id}/${dataset.id} has an approved graph measure`);
       if (site.id === "statcan") assert.deepEqual(dataset.request, verifiedStatCan[dataset.id], `${dataset.id} uses the verified observation series`);
       if (site.id === "quebec") assert.deepEqual(dataset.request, verifiedQuebec[dataset.id], `${dataset.id} uses the reviewed resource and bounded field selection`);
     }
   }
   assert.equal(Gridpull.getInfo("healthcanada", "gouda").dataset.name, "Nutrient amounts in Gouda cheese");
+  assert.deepEqual(Gridpull.listDatasets("healthcanada").map((dataset) => dataset.id), ["gouda"]);
+  assert.deepEqual(Gridpull.getInfo("healthcanada", "foods").dataset.graphableFields, []);
   assert.throws(() => Gridpull.getInfo("unknown", "dataset"), /Unknown data provider/);
+});
+
+test("graphability requires an approved measure with a numeric observation", () => {
+  assert.equal(Gridpull.isGraphableTable({ columns: ["food_code", "food_description"], rows: [["109", "Gouda"], ["110", "Cheddar"]] }, []), false);
+  assert.equal(Gridpull.isGraphableTable({ columns: ["nutrient_code", "nutrient_decimals"], rows: [["1", "2"], ["2", "1"]] }, ["nutrient_value"]), false);
+  assert.equal(Gridpull.isGraphableTable({ columns: ["nutrient_value"], rows: [["label"]] }, ["nutrient_value"]), false);
+  assert.equal(Gridpull.isGraphableTable({ columns: ["nutrient_value"], rows: [["12.5"]] }, ["nutrient_value"]), true);
+  assert.equal(Gridpull.isGraphableTable({ columns: ["nutrient_value"], rows: [["12.5"], ["14.3"]] }, ["nutrient_value"]), true);
 });
 
 test("Données Québec DataStore normalizer validates the resource and requested columns", () => {
@@ -105,21 +112,8 @@ test("unverified dataset cannot make a network request", async () => {
   await assert.rejects(Gridpull.load("toronto", "indicators", { fetch: () => { throw new Error("network should not be reached"); } }), /not been verified/);
 });
 
-test("verified Health Canada dataset loads a bounded JSON array without credentials", async () => {
-  let request;
-  const body = JSON.stringify([{ food_code: 571, food_description: "Chicken, broiler, giblets, raw" }]);
-  const response = {
-    ok: true,
-    status: 200,
-    headers: { get: (name) => name.toLowerCase() === "content-type" ? "application/json; charset=utf-8" : null },
-    body: new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(body)); controller.close(); } })
-  };
-  const table = await Gridpull.load("healthcanada", "foods", { fetch: async (url, options) => { request = { url, options }; return response; } });
-  assert.equal(request.url, "https://food-nutrition.canada.ca/api/canadian-nutrient-file/food/?lang=en&type=json");
-  assert.equal(request.options.mode, "cors");
-  assert.equal(request.options.credentials, "omit");
-  assert.deepEqual(table.columns, ["food_code", "food_description"]);
-  assert.deepEqual(table.rows, [["571", "Chicken, broiler, giblets, raw"]]);
+test("label-only food dataset is rejected before a provider request", async () => {
+  await assert.rejects(Gridpull.load("healthcanada", "foods", { fetch: () => { throw new Error("network should not be reached"); } }), /no approved numeric measure/);
 });
 
 test("verified Statistics Canada dataset uses anonymous WDS POST and normalizes observations", async () => {

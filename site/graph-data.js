@@ -29,7 +29,10 @@
   const status = document.querySelector("[data-load-status]");
   const graph = document.querySelector("grid-graph");
   const tableWrap = document.querySelector("[data-table-preview]");
-  if (!info.dataset.verified || !info.dataset.fetchURL) {
+  if (!Array.isArray(info.dataset.graphableFields) || !info.dataset.graphableFields.length) {
+    loadButton.disabled = true;
+    status.textContent = "This source contains labels or reference fields but no approved numeric measure for graphing.";
+  } else if (!info.dataset.verified || !info.dataset.fetchURL) {
     loadButton.disabled = true;
     status.textContent = info.dataset.disabledReason || "This source is being checked. Dataset loading will be enabled after its public endpoint is verified.";
   }

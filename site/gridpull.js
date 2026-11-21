@@ -12,27 +12,27 @@
       name: "Statistics Canada",
       url: "https://www.statcan.gc.ca/",
       datasets: {
-        population: { name: "Population estimates", description: "Explore quarterly population estimates for Canada. This view follows the total population series across the latest 100 reference quarters, with counts recorded at each quarter end. Use the official table page to review its coverage, definitions, and available breakdowns.", format: "json", schema: "statcan-wds", request: { productId: 17100009, coordinate: "1.0.0.0.0.0.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1710000901", fetchURL: STATCAN_WDS_URL, verified: true },
-        labour: { name: "Labour force characteristics", description: "Explore monthly employment for people aged 15 and over in Canada. This view uses the total-gender seasonally adjusted series and shows the latest 100 reference months. The graph converts Statistics Canada's reported thousands into people using the table's scalar factor. The official table also offers other measures and groups; consult its definitions before comparing them.", format: "json", schema: "statcan-wds", request: { productId: 14100287, coordinate: "1.3.1.1.1.1.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701", fetchURL: STATCAN_WDS_URL, verified: true },
-        prices: { name: "Consumer Price Index", description: "Explore Canada's monthly Consumer Price Index for all items across the latest 100 reference months. The index follows price change for a representative basket of consumer goods and services. Review the official table for geography, product coverage, and index-period details before comparing series.", format: "json", schema: "statcan-wds", request: { productId: 18100004, coordinate: "2.2.0.0.0.0.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000401", fetchURL: STATCAN_WDS_URL, verified: true }
+        population: { name: "Population estimates", description: "Explore quarterly population estimates for Canada. This view follows the total population series across the latest 100 reference quarters, with counts recorded at each quarter end. Use the official table page to review its coverage, definitions, and available breakdowns.", format: "json", schema: "statcan-wds", graphableFields: ["Value"], request: { productId: 17100009, coordinate: "1.0.0.0.0.0.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1710000901", fetchURL: STATCAN_WDS_URL, verified: true },
+        labour: { name: "Labour force characteristics", description: "Explore monthly employment for people aged 15 and over in Canada. This view uses the total-gender seasonally adjusted series and shows the latest 100 reference months. The graph converts Statistics Canada's reported thousands into people using the table's scalar factor. The official table also offers other measures and groups; consult its definitions before comparing them.", format: "json", schema: "statcan-wds", graphableFields: ["Value"], request: { productId: 14100287, coordinate: "1.3.1.1.1.1.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701", fetchURL: STATCAN_WDS_URL, verified: true },
+        prices: { name: "Consumer Price Index", description: "Explore Canada's monthly Consumer Price Index for all items across the latest 100 reference months. The index follows price change for a representative basket of consumer goods and services. Review the official table for geography, product coverage, and index-period details before comparing series.", format: "json", schema: "statcan-wds", graphableFields: ["Value"], request: { productId: 18100004, coordinate: "2.2.0.0.0.0.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000401", fetchURL: STATCAN_WDS_URL, verified: true }
       }
     },
     healthcanada: {
       name: "Health Canada Canadian Nutrient File",
       url: "https://health-products.canada.ca/api/documentation/cnf-documentation-en.html",
       datasets: {
-        foods: { name: "Foods in the Canadian Nutrient File", description: "Browse the food descriptions maintained in Health Canada's Canadian Nutrient File, a reference database for foods commonly consumed in Canada. Each record supplies a food code and food name, which can help identify the entries used in the nutrient resources. Use the official guide to review the database scope and field definitions before interpreting food codes.", format: "json", sourceUrl: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/food/?lang=en&type=json", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/food/?lang=en&type=json", verified: true },
-        nutrients: { name: "Nutrient names and units", description: "Explore the nutrient names and units defined by the Canadian Nutrient File. The records include identifiers, display names, units, and grouping fields used to describe nutrient measurements across foods. Consult Health Canada's API guide for the field definitions and notes about how nutrient names are presented.", format: "json", sourceUrl: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&type=json", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&type=json", verified: true },
-        gouda: { name: "Nutrient amounts in Gouda cheese", description: "Review the nutrient measurements recorded for the Canadian Nutrient File's Gouda cheese example (food code 109). The API guide describes these values per 100 grams of edible portion and includes the nutrient name, value, unit context, and supporting observation fields. This reference composition is not a personalized dietary recommendation; check Health Canada's notes when comparing individual nutrient values.", format: "json", sourceUrl: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json", verified: true }
+        foods: { name: "Foods in the Canadian Nutrient File", description: "Food codes and labels are reference identifiers and names, not numeric measures. This table is not offered as a graph dataset.", format: "json", graphableFields: [], sourceUrl: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/food/?lang=en&type=json", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/food/?lang=en&type=json", verified: true },
+        nutrients: { name: "Nutrient names and units", description: "Nutrient identifiers, names, units, and order fields describe the file structure, not numeric observations. This table is not offered as a graph dataset.", format: "json", graphableFields: [], sourceUrl: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&type=json", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&type=json", verified: true },
+        gouda: { name: "Nutrient amounts in Gouda cheese", description: "Review the nutrient measurements recorded for the Canadian Nutrient File's Gouda cheese example (food code 109). The API guide describes these values per 100 grams of edible portion and includes the nutrient name, value, unit context, and supporting observation fields. This reference composition is not a personalized dietary recommendation; check Health Canada's notes when comparing individual nutrient values.", format: "json", graphableFields: ["nutrient_value"], sourceUrl: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json", verified: true }
       }
     },
     quebec: {
       name: "Données Québec",
       url: "https://www.donneesquebec.ca/",
       datasets: {
-        municipalities: { name: "Québec municipal population and area", description: "Compare population and land area for Québec municipalities, with regional and MRC context. The source register is updated continuously, while its population figures are based on provincial decrees using estimates from the Institut de la statistique du Québec. The chart request asks only for municipality, population, area, region, and MRC fields; contact details are not requested.", format: "json", schema: "ckan-datastore", request: { resourceId: "19385b4e-5503-4330-9e59-f998f5918363", limit: 100, fields: ["munnom", "mpopul", "msuperf", "regadm", "mrc"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/repertoire-des-municipalites-du-quebec", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true },
-        population: { name: "Québec population estimates and projections", description: "Explore comparable population estimates and projections for Québec health and social service territories from 2001 to 2051. Records are organized by territory, year, data type, and sex, with total population available in the TousLesAges field. The source describes the series as supporting both retrospective and forward-looking analysis; interpret projected values according to the official methodology.", format: "json", schema: "ckan-datastore", request: { resourceId: "05c3c53d-db97-4bc3-8221-d8af47b4b93e", limit: 100, fields: ["NiveauGeographique", "Territoire", "Annee", "TypeDonnees", "Sexe", "TousLesAges"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/estimations-et-projections-de-population-comparables", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true },
-        finances: { name: "Québec municipal financial profile, 2025 data", description: "Browse 2025 municipal financial profile records prepared by Québec’s Ministère des Affaires municipales et de l’Habitation. The rows include municipality names, population, population class, and coded financial measures derived from property assessment summaries. The chart keeps the source’s measure codes visible so they can be checked against the ministry’s accompanying field descriptions before interpretation.", format: "json", schema: "ckan-datastore", request: { resourceId: "15192f34-a635-47f5-aaf9-eb1621d65b2e", limit: 100, fields: ["nom_organisme", "population", "desc_cp", "FIALX01959", "FIALX01960", "FIALX01961", "FIALX01962", "FIALX01963", "FIALX01977", "FIALX02005", "FIALX02006", "FIALX02007", "FIALX02008", "FIALX02009", "FIALX02010", "FIALX02011", "FIALX02097"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true }
+        municipalities: { name: "Québec municipal population and area", description: "Compare population and land area for Québec municipalities, with regional and MRC context. The source register is updated continuously, while its population figures are based on provincial decrees using estimates from the Institut de la statistique du Québec. The chart request asks only for municipality, population, area, region, and MRC fields; contact details are not requested.", format: "json", schema: "ckan-datastore", graphableFields: ["mpopul", "msuperf"], request: { resourceId: "19385b4e-5503-4330-9e59-f998f5918363", limit: 100, fields: ["munnom", "mpopul", "msuperf", "regadm", "mrc"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/repertoire-des-municipalites-du-quebec", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true },
+        population: { name: "Québec population estimates and projections", description: "Explore comparable population estimates and projections for Québec health and social service territories from 2001 to 2051. Records are organized by territory, year, data type, and sex, with total population available in the TousLesAges field. The source describes the series as supporting both retrospective and forward-looking analysis; interpret projected values according to the official methodology.", format: "json", schema: "ckan-datastore", graphableFields: ["TousLesAges"], request: { resourceId: "05c3c53d-db97-4bc3-8221-d8af47b4b93e", limit: 100, fields: ["NiveauGeographique", "Territoire", "Annee", "TypeDonnees", "Sexe", "TousLesAges"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/estimations-et-projections-de-population-comparables", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true },
+        finances: { name: "Québec municipal financial profile, 2025 data", description: "Browse municipal population counts in the 2025 Quebec municipal financial profile. Opaque financial code fields remain in the source table and are excluded from chart measures until their meanings are mapped.", format: "json", schema: "ckan-datastore", graphableFields: ["population"], request: { resourceId: "15192f34-a635-47f5-aaf9-eb1621d65b2e", limit: 100, fields: ["nom_organisme", "population", "desc_cp", "FIALX01959", "FIALX01960", "FIALX01961", "FIALX01962", "FIALX01963", "FIALX01977", "FIALX02005", "FIALX02006", "FIALX02007", "FIALX02008", "FIALX02009", "FIALX02010", "FIALX02011", "FIALX02097"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true }
       }
     },
     toronto: {
@@ -53,7 +53,7 @@
   function listDatasets(siteId) {
     const site = registry[siteId];
     if (!site) throw new Error("Unknown data provider.");
-    return Object.keys(site.datasets).map((id) => ({ id, ...site.datasets[id] }));
+    return Object.keys(site.datasets).map((id) => ({ id, ...site.datasets[id] })).filter((dataset) => Array.isArray(dataset.graphableFields) && dataset.graphableFields.length > 0);
   }
   function getInfo(siteId, datasetId) {
     const site = registry[siteId];
@@ -148,6 +148,19 @@
     }
     return { columns: fields, rows: json.result.records.map((record) => fields.map((field) => record && record[field] != null ? String(record[field]).slice(0, 20_000) : "")) };
   }
+  function isGraphableTable(table, graphableFields) {
+    if (!table || !Array.isArray(table.columns) || !Array.isArray(table.rows) || !Array.isArray(graphableFields)) return false;
+    return graphableFields.some((name) => {
+      const index = table.columns.indexOf(name);
+      if (index < 0) return false;
+      for (const row of table.rows) {
+        const raw = row[index];
+        const value = typeof raw === "number" ? raw : (typeof raw === "string" && raw.trim() ? Number(raw.replace(/[,$%\s]/g, "")) : NaN);
+        if (Number.isFinite(value)) return true;
+      }
+      return false;
+    });
+  }
   async function readBounded(response) {
     if (!response.body || typeof response.body.getReader !== "function") throw new Error("This browser cannot safely stream the dataset response.");
     const reader = response.body.getReader();
@@ -165,6 +178,7 @@
   async function load(siteId, datasetId, options = {}) {
     const info = getInfo(siteId, datasetId);
     if (!info.dataset.verified || !info.dataset.fetchURL) throw new Error("The dataset's direct public endpoint has not been verified yet.");
+    if (!Array.isArray(info.dataset.graphableFields) || !info.dataset.graphableFields.length) throw new Error("This dataset contains labels or reference fields but no approved numeric measure for graphing.");
     const url = new URL(info.dataset.fetchURL);
     if (url.protocol !== "https:") throw new Error("Only HTTPS data sources are supported.");
     if (info.dataset.schema === "ckan-datastore") {
@@ -202,6 +216,7 @@
       const text = await readBounded(response);
       const json = info.dataset.format === "json" ? JSON.parse(text) : null;
       const table = info.dataset.format === "csv" ? parseCSV(text) : info.dataset.schema === "statcan-wds" ? normalizeStatCanWDS(json, info.dataset.request.productId) : info.dataset.schema === "ckan-datastore" ? normalizeCKANDatastore(json, info.dataset.request) : normalizeJSON(json);
+      if (!isGraphableTable(table, info.dataset.graphableFields)) throw new Error("The source did not return at least two numeric observations in an approved graph measure. This dataset was not displayed.");
       return { ...table, source: info.site, dataset: info.dataset };
     } catch (error) {
       if (controller.signal.aborted && controller.signal.reason instanceof Error) throw controller.signal.reason;
@@ -212,5 +227,5 @@
       options.signal?.removeEventListener("abort", cancel);
     }
   }
-  root.Gridpull = Object.freeze({ listSites, listDatasets, getInfo, load, parseCSV, normalizeJSON, normalizeStatCanWDS, normalizeCKANDatastore });
+  root.Gridpull = Object.freeze({ listSites, listDatasets, getInfo, load, parseCSV, normalizeJSON, normalizeStatCanWDS, normalizeCKANDatastore, isGraphableTable });
 })(typeof window === "undefined" ? globalThis : window);

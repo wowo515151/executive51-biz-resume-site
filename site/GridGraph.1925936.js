@@ -24,6 +24,11 @@
     return numericNames.filter((name) => !MEASURE_HINT.test(name)).slice(0, 3);
   }
 
+  function graphableNumericIndexes(columns, rows, allowedNames) {
+    const allowed = new Set(allowedNames || []);
+    return columns.map((name, index) => index).filter((index) => allowed.has(columns[index]) && rows.some((row) => numeric(row[index]) !== null));
+  }
+
   function create3DTrace(rows, columns, indexes, labels) {
     const safeColumns = columns.map(safePlotlyText);
     const safeLabels = labels.map(safePlotlyText);
@@ -142,10 +147,13 @@
       this.draw();
     }
     render() {
+      const supportedTypes = (this.getAttribute("data-graph-types") || TYPES.join(",")).split(",").map((type) => type.trim()).filter((type) => TYPES.includes(type));
+      const requestedDefault = this.getAttribute("data-default-type");
+      this.type = supportedTypes.includes(requestedDefault) ? requestedDefault : (supportedTypes[0] || "bar");
       const s = document.createElement("style");
       s.textContent = `:host{display:block;color:#172b49;font:14px/1.5 'Segoe UI',Arial,sans-serif}[hidden]{display:none!important}.tools{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}.tools button{border:1px solid #cbd9e5;border-radius:6px;background:white;color:#234563;padding:7px 10px;cursor:pointer}.tools button[aria-pressed=true]{background:#0b477b;color:#fff}.tools button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #55b9dd;outline-offset:2px}.fields{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;margin:0 0 12px;padding:12px;border:1px solid #dce7f0;border-radius:8px;background:#f8fbfd}.fields label{display:grid;gap:4px;font-weight:600}.fields select{max-width:100%;min-width:180px;border:1px solid #9db1c4;border-radius:5px;background:#fff;padding:6px;color:#172b49;font:inherit}.series{display:flex;flex-wrap:wrap;gap:8px 14px;margin:0;padding:0;border:0}.series legend{margin-bottom:4px;font-weight:700}.series label{display:inline-flex;align-items:center;gap:5px;font-weight:400}.field-note{flex-basis:100%;margin:0;color:#536981}.plot{min-height:360px;width:100%;border:1px solid #dce7f0;border-radius:8px;background:#fff;overflow:hidden}.note{color:#5a6d86;padding:18px}.error{color:#8e2424}`;
       const controls = document.createElement("div"); controls.className = "tools"; controls.setAttribute("role", "group"); controls.setAttribute("aria-label", "Graph type");
-      TYPES.forEach((type) => {
+      supportedTypes.forEach((type) => {
         const b = document.createElement("button"); b.type = "button";
         b.textContent = type === "surface3d" ? "3D surface" : type[0].toUpperCase() + type.slice(1);
         b.setAttribute("aria-pressed", String(this.type === type));
@@ -186,7 +194,8 @@
       const timeSeries = this.getAttribute("data-time-series") === "true" && columns.length === 2 && columns[0] === "Reference period";
       const oldX = this._xSelect.value;
       const previousY = new Set([...this._seriesOptions.querySelectorAll("input:checked")].map((input) => input.value));
-      const numericIndexes = columns.map((_, index) => index).filter((index) => rows.some((row) => numeric(row[index]) !== null));
+      const graphableNames = (this.getAttribute("data-graphable-y") || "").split(",").map((name) => name.trim()).filter(Boolean);
+      const numericIndexes = graphableNumericIndexes(columns, rows, graphableNames);
       const xIndex = columns.findIndex((_, index) => !numericIndexes.includes(index));
       const requestedX = this.getAttribute("data-default-x");
       const defaultX = requestedX && columns.includes(requestedX) ? requestedX : (oldX && columns.includes(oldX) ? oldX : columns[xIndex] || columns[0] || "");
@@ -203,15 +212,19 @@
       numericIndexes.slice(0, 100).forEach((index) => {
         const name = columns[index], label = document.createElement("label"), input = document.createElement("input");
         input.type = "checkbox"; input.value = name; input.checked = selected.has(name);
-        input.addEventListener("change", () => this.draw());
+        input.addEventListener("change", () => {
+          if (input.checked && this.getAttribute("data-single-measure") === "true") this._seriesOptions.querySelectorAll("input").forEach((other) => { if (other !== input) other.checked = false; });
+          this.draw();
+        });
         const text = document.createElement("span"); text.textContent = name;
         label.append(input, text); this._seriesOptions.append(label);
       });
-      const defaultNote = "Identifier-like, code, order, rank, sequence, index, decimal, precision, count, source, and error fields are left unselected by default.";
+      const defaultNote = "Only dataset-approved numeric measures appear as graph series; identifiers, labels, and unreviewed numeric codes are excluded.";
       this._fieldNote.textContent = numericIndexes.length > 100
-        ? `Choose up to 100 numeric fields. ${defaultNote}`
-        : `${defaultNote} Choose any field when it is meaningful for your view.`;
-      this._defaultFieldNote = this._fieldNote.textContent;
+        ? `Choose up to 100 approved numeric measures. ${defaultNote}`
+        : defaultNote;
+      const chartNote = this.getAttribute("data-chart-note");
+      this._defaultFieldNote = chartNote ? `${chartNote} ${this._fieldNote.textContent}` : this._fieldNote.textContent;
       this._xLabel.hidden = timeSeries;
       this._seriesOptions.parentElement.hidden = timeSeries;
       this._fieldNote.hidden = timeSeries;
@@ -245,7 +258,7 @@
       if (!columns.length || !rows.length) { this.message("Choose Load dataset to display a graph."); return; }
       if (!root.Plotly || typeof root.Plotly.react !== "function") { this.message("The graphing library did not load. Check your connection and reload this page.", true); return; }
       const indexes = [...(this._seriesOptions?.querySelectorAll("input:checked") || [])].map((input) => columns.indexOf(input.value)).filter((index) => index >= 0);
-      if (!indexes.length) { this.message("This table has no numeric measure selected. Choose one or more fields above, or use the table preview for this lookup dataset."); return; }
+      if (!indexes.length) { this.message("This table has no approved numeric graph measure. Review the dataset source or use the table preview."); return; }
       this._fieldNote.textContent = this._defaultFieldNote || "";
       const xIndex = Math.max(0, columns.indexOf(this._xSelect?.value));
       const labels = rows.map((row, index) => safePlotlyText(String(row[xIndex] ?? index + 1).slice(0, 100)));
@@ -308,5 +321,5 @@
     }
   }
   if (!customElements.get("grid-graph")) customElements.define("grid-graph", GridGraph);
-  if (typeof module !== "undefined" && module.exports) module.exports = { create3DTrace, createPieTrace, shouldUseHorizontalBars, defaultMeasureNames, safePlotlyText, schedulePlotResize, cancelPlotResize, periodDate };
+  if (typeof module !== "undefined" && module.exports) module.exports = { create3DTrace, createPieTrace, shouldUseHorizontalBars, defaultMeasureNames, graphableNumericIndexes, safePlotlyText, schedulePlotResize, cancelPlotResize, periodDate };
 })(window);
