@@ -6,14 +6,15 @@
   const MAX_ROWS = 20_000;
   const MAX_COLUMNS = 100;
   const MAX_TIME_MS = 20_000;
+  const STATCAN_WDS_URL = "https://www150.statcan.gc.ca/t1/wds/rest/getDataFromCubePidCoordAndLatestNPeriods";
   const registry = {
     statcan: {
       name: "Statistics Canada",
       url: "https://www.statcan.gc.ca/",
       datasets: {
-        population: { name: "Population estimates", description: "Explore population estimates for Canada, provinces, territories, and other published geographies. The series show how population counts change across reference periods and support comparisons between places. Use the official table page to review its coverage, definitions, and available breakdowns.", format: "json", sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1710000901", fetchURL: null, verified: false },
-        labour: { name: "Labour force characteristics", description: "Explore monthly labour force characteristics for Canada and the provinces. The table reports headline measures such as employment, unemployment, and participation across published population groups. Compare recent and historical observations while checking the source table for its definitions and seasonal adjustment details.", format: "json", sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701", fetchURL: null, verified: false },
-        prices: { name: "Consumer Price Index", description: "Explore consumer price index movements for Canada and the provinces across product groups and reference periods. The CPI tracks price change for a representative basket of consumer goods and services. Review the official table for geography, product coverage, and index-period details before comparing series.", format: "json", sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000401", fetchURL: null, verified: false }
+        population: { name: "Population estimates", description: "Explore quarterly population estimates for Canada. This view follows the total population series across the latest 100 reference quarters, with counts recorded at each quarter end. Use the official table page to review its coverage, definitions, and available breakdowns.", format: "json", schema: "statcan-wds", request: { productId: 17100009, coordinate: "1.0.0.0.0.0.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1710000901", fetchURL: STATCAN_WDS_URL, verified: true },
+        labour: { name: "Labour force characteristics", description: "Explore monthly employment for people aged 15 and over in Canada. This view uses the total-gender seasonally adjusted series and shows the latest 100 reference months. The graph converts Statistics Canada's reported thousands into people using the table's scalar factor. The official table also offers other measures and groups; consult its definitions before comparing them.", format: "json", schema: "statcan-wds", request: { productId: 14100287, coordinate: "1.3.1.1.1.1.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701", fetchURL: STATCAN_WDS_URL, verified: true },
+        prices: { name: "Consumer Price Index", description: "Explore Canada's monthly Consumer Price Index for all items across the latest 100 reference months. The index follows price change for a representative basket of consumer goods and services. Review the official table for geography, product coverage, and index-period details before comparing series.", format: "json", schema: "statcan-wds", request: { productId: 18100004, coordinate: "2.2.0.0.0.0.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000401", fetchURL: STATCAN_WDS_URL, verified: true }
       }
     },
     healthcanada: {
@@ -29,9 +30,9 @@
       name: "City of Toronto Open Data",
       url: "https://open.toronto.ca/",
       datasets: {
-        indicators: { name: "Toronto's Dashboard Key Indicators", description: "Explore key indicator data shared with Toronto's City Manager's Office by City divisions and agencies. The dataset includes recent and historical periods used to assess trends for Toronto and its services. Consult the official record for the dashboard context, update schedule, and field descriptions.", format: "json", sourceUrl: "https://open.toronto.ca/dataset/toronto-s-dashboard-key-indicators/", fetchURL: null, verified: false },
-        bicycle: { name: "Bicycle and Micromobility Cordon Count", description: "Review bicycle and micromobility counts and classifications collected in Toronto's 2022 cordon count study. The observations describe counted travel across the study locations and provide a snapshot for comparing mobility patterns. Check the official record for collection methods, limitations, and available formats.", format: "json", sourceUrl: "https://open.toronto.ca/dataset/bicycle-and-micromobility-cordon-count/", fetchURL: null, verified: false },
-        quality: { name: "Toronto Open Data Quality Scores", description: "Explore Toronto’s catalogue-scorecard results and the scoring models from the portal’s first Data Quality Scoring iteration. The scores summarize dataset quality characteristics such as usability, timeliness, completeness, and description quality. Review the official record for newer score files, explanation codes, and update details.", format: "csv", sourceUrl: "https://open.toronto.ca/dataset/catalogue-quality-scores/", fetchURL: null, verified: false }
+        indicators: { name: "Toronto's Dashboard Key Indicators", description: "Explore key indicator data shared with Toronto's City Manager's Office by City divisions and agencies. The dataset includes recent and historical periods used to assess trends for Toronto and its services. Consult the official record for the dashboard context, update schedule, and field descriptions.", format: "json", sourceUrl: "https://open.toronto.ca/dataset/toronto-s-dashboard-key-indicators/", resourceId: "2350d71a-31d1-4387-9e29-4c1cfc866894", endpoint: "https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/datastore_search", fetchURL: null, verified: false, disabledReason: "Toronto's public data API returned the sample, but its response does not allow browser access from this graph site." },
+        bicycle: { name: "Bicycle and Micromobility Cordon Count", description: "Review bicycle and micromobility counts and classifications collected in Toronto's 2022 cordon count study. The observations describe counted travel across the study locations and provide a snapshot for comparing mobility patterns. Check the official record for collection methods, limitations, and available formats.", format: "json", sourceUrl: "https://open.toronto.ca/dataset/bicycle-and-micromobility-cordon-count/", resourceId: "da07a807-86f0-40b7-b5d7-bdbde1c87925", endpoint: "https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/datastore_search", fetchURL: null, verified: false, disabledReason: "This dataset record does not specify a reuse licence, and Toronto's API does not allow browser access from this graph site." },
+        quality: { name: "Toronto Open Data Quality Scores", description: "Explore Toronto’s catalogue-scorecard results and the scoring models from the portal’s first Data Quality Scoring iteration. The scores summarize dataset quality characteristics such as usability, timeliness, completeness, and description quality. Review the official record for newer score files, explanation codes, and update details.", format: "json", sourceUrl: "https://open.toronto.ca/dataset/catalogue-quality-scores/", resourceId: "22f223e7-73f7-4842-935c-80a0ba5c3e5b", endpoint: "https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/datastore_search", fetchURL: null, verified: false, disabledReason: "Toronto's public data API returned the sample, but its response does not allow browser access from this graph site." }
       }
     }
   };
@@ -105,6 +106,24 @@
     const columns = [...new Set(values.flatMap((r) => Object.keys(r || {})))].slice(0, MAX_COLUMNS);
     return { columns, rows: values.map((r) => columns.map((key) => r && r[key] != null ? String(r[key]).slice(0, 20_000) : "")) };
   }
+  function normalizeStatCanWDS(json, productId) {
+    if (!Array.isArray(json) || json.length !== 1 || json[0]?.status !== "SUCCESS") throw new Error("Statistics Canada returned an unsuccessful data response.");
+    const result = json[0].object;
+    if (!result || Number(result.productId) !== productId || !Array.isArray(result.vectorDataPoint)) throw new Error("Statistics Canada returned an unexpected data series.");
+    if (result.vectorDataPoint.length > MAX_ROWS) throw new Error("Dataset exceeds the row limit.");
+    const rows = result.vectorDataPoint.map((point) => {
+      const period = point.refPer || point.refPerRaw || "";
+      let value = "";
+      if (point.value !== null && point.value !== undefined && point.value !== "") {
+        const numeric = Number(point.value);
+        const factor = Number(point.scalarFactorCode ?? 0);
+        if (!Number.isFinite(numeric) || !Number.isInteger(factor) || factor < 0 || factor > 6) throw new Error("Statistics Canada returned an invalid numeric value.");
+        value = String(numeric * (10 ** factor));
+      }
+      return [String(period).slice(0, 80), value];
+    });
+    return { columns: ["Reference period", "Value"], rows };
+  }
   async function readBounded(response) {
     if (!response.body || typeof response.body.getReader !== "function") throw new Error("This browser cannot safely stream the dataset response.");
     const reader = response.body.getReader();
@@ -132,7 +151,16 @@
       else options.signal.addEventListener("abort", cancel, { once: true });
     }
     try {
-      const response = await (options.fetch || fetch)(url.href, { mode: "cors", credentials: "omit", signal: controller.signal, headers: { Accept: "text/csv, application/json" } });
+      const requestOptions = {
+        mode: "cors", credentials: "omit", signal: controller.signal,
+        headers: { Accept: "text/csv, application/json" },
+        ...(info.dataset.request ? {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify([info.dataset.request])
+        } : {})
+      };
+      const response = await (options.fetch || fetch)(url.href, requestOptions);
       if (!response.ok) throw new Error(`Data source returned HTTP ${response.status}.`);
       const contentType = (response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
       const isJSON = contentType === "application/json" || contentType === "text/json" || /^application\/[a-z0-9.+-]+\+json$/.test(contentType);
@@ -142,7 +170,8 @@
       const declared = Number(response.headers.get("content-length"));
       if (declared > MAX_BYTES) throw new Error("Dataset exceeds the 5 MB limit.");
       const text = await readBounded(response);
-      const table = info.dataset.format === "csv" ? parseCSV(text) : normalizeJSON(JSON.parse(text));
+      const json = info.dataset.format === "json" ? JSON.parse(text) : null;
+      const table = info.dataset.format === "csv" ? parseCSV(text) : info.dataset.schema === "statcan-wds" ? normalizeStatCanWDS(json, info.dataset.request.productId) : normalizeJSON(json);
       return { ...table, source: info.site, dataset: info.dataset };
     } catch (error) {
       if (controller.signal.aborted && controller.signal.reason instanceof Error) throw controller.signal.reason;
@@ -153,5 +182,5 @@
       options.signal?.removeEventListener("abort", cancel);
     }
   }
-  root.Gridpull = Object.freeze({ listSites, listDatasets, getInfo, load, parseCSV, normalizeJSON });
+  root.Gridpull = Object.freeze({ listSites, listDatasets, getInfo, load, parseCSV, normalizeJSON, normalizeStatCanWDS });
 })(typeof window === "undefined" ? globalThis : window);

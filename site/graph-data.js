@@ -31,7 +31,7 @@
   const tableWrap = document.querySelector("[data-table-preview]");
   if (!info.dataset.verified || !info.dataset.fetchURL) {
     loadButton.disabled = true;
-    status.textContent = "This source is being checked. Dataset loading will be enabled after its public endpoint is verified.";
+    status.textContent = info.dataset.disabledReason || "This source is being checked. Dataset loading will be enabled after its public endpoint is verified.";
   }
   loadButton.addEventListener("click", async () => {
     loadButton.disabled = true;
