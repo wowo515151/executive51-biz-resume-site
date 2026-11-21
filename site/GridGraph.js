@@ -108,7 +108,7 @@
       const xIndex = Math.max(0, columns.indexOf(this._xSelect?.value));
       const labels = rows.map((row, index) => String(row[xIndex] ?? index + 1).slice(0, 100));
       const averageLabelLength = labels.reduce((sum, label) => sum + label.length, 0) / labels.length;
-      const horizontalBars = this.type === "bar" && labels.length > 12 && labels.length <= 120 && averageLabelLength > 16 && labels.every((label) => numeric(label) === null);
+      const horizontalBars = this.type === "bar" && labels.length > 12 && labels.length <= 120 && averageLabelLength > 10 && labels.some((label) => label.length >= 24) && labels.every((label) => numeric(label) === null);
       const traces = [];
       if (this.type === "pie") {
         const index = indexes[0];
