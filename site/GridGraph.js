@@ -107,6 +107,8 @@
       if (!indexes.length) { this.message("This table has no numeric measure selected. Choose one or more fields above, or use the table preview for this lookup dataset."); return; }
       const xIndex = Math.max(0, columns.indexOf(this._xSelect?.value));
       const labels = rows.map((row, index) => String(row[xIndex] ?? index + 1).slice(0, 100));
+      const averageLabelLength = labels.reduce((sum, label) => sum + label.length, 0) / labels.length;
+      const horizontalBars = this.type === "bar" && labels.length > 12 && labels.length <= 120 && averageLabelLength > 16 && labels.every((label) => numeric(label) === null);
       const traces = [];
       if (this.type === "pie") {
         const index = indexes[0];
@@ -123,13 +125,15 @@
       } else {
         indexes.forEach((index) => {
           const y = rows.map((row) => numeric(row[index]));
-          if (this.type === "bar") traces.push({ type: "bar", name: columns[index], x: labels, y });
+          if (this.type === "bar" && horizontalBars) traces.push({ type: "bar", orientation: "h", name: columns[index], x: y, y: labels });
+          else if (this.type === "bar") traces.push({ type: "bar", name: columns[index], x: labels, y });
           else if (this.type === "line") traces.push({ type: "scatter", mode: "lines+markers", name: columns[index], x: labels, y });
           else if (this.type === "area") traces.push({ type: "scatter", mode: "lines", stackgroup: "one", name: columns[index], x: labels, y });
         });
       }
       const is3d = this.type === "surface3d";
-      const layout = { autosize: true, height: 420, margin: { l: 58, r: 24, t: 28, b: 90 }, paper_bgcolor: "#fff", plot_bgcolor: "#fff", font: { color: "#172b49" }, legend: { orientation: "h", y: -0.24 }, xaxis: { automargin: true, tickangle: labels.length > 12 ? -45 : 0 }, yaxis: { automargin: true }, ...(is3d ? { scene: { xaxis: { title: columns[xIndex] }, yaxis: { title: "Series" }, zaxis: { title: "Value" } } } : {}), ...(this.type === "bar" ? { barmode: "group" } : {}) };
+      const labelMargin = horizontalBars ? Math.min(300, Math.max(140, Math.ceil(Math.max(...labels.map((label) => label.length)) * 6))) : 58;
+      const layout = { autosize: true, height: horizontalBars ? Math.min(2200, Math.max(620, rows.length * 18)) : 420, margin: { l: labelMargin, r: 24, t: 28, b: horizontalBars ? 60 : 90 }, paper_bgcolor: "#fff", plot_bgcolor: "#fff", font: { color: "#172b49" }, legend: { orientation: "h", y: -0.24 }, xaxis: { automargin: true, title: horizontalBars ? columns[indexes[0]] : undefined, tickangle: labels.length > 12 && !horizontalBars ? -45 : 0 }, yaxis: { automargin: true, title: horizontalBars ? columns[xIndex] : undefined }, ...(is3d ? { scene: { xaxis: { title: columns[xIndex] }, yaxis: { title: "Series" }, zaxis: { title: "Value" } } } : {}), ...(this.type === "bar" ? { barmode: "group" } : {}) };
       this._plot.querySelector(".note")?.remove();
       this._plot.setAttribute("aria-label", `${this.type} graph for ${rows.length} table rows using ${indexes.length} numeric field${indexes.length === 1 ? "" : "s"}`);
       root.Plotly.react(this._plot, traces, layout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ["sendDataToCloud"] });
