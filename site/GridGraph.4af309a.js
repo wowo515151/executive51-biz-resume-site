@@ -41,6 +41,32 @@
     };
   }
 
+  function createPieTrace(rows, index, labels) {
+    const rawValues = rows.map((row) => numeric(row[index]));
+    if (rawValues.some((value) => value !== null && value < 0)) {
+      return { trace: null, reason: "negative" };
+    }
+    const entries = rawValues
+      .map((value, rowIndex) => ({ label: labels[rowIndex], value }))
+      .filter((entry) => entry.value !== null && entry.value > 0);
+    if (!entries.length) return { trace: null, reason: "empty" };
+    return {
+      reason: null,
+      trace: {
+        type: "pie", labels: entries.map((entry) => entry.label), values: entries.map((entry) => entry.value),
+        hole: 0.25, textinfo: entries.length > 20 ? "none" : "label+percent",
+        hovertemplate: "%{label}<br>%{value}<extra></extra>"
+      }
+    };
+  }
+
+  function shouldUseHorizontalBars(labels) {
+    if (labels.length <= 12 || labels.length > 120 || !labels.every((label) => numeric(label) === null)) return false;
+    const averageLength = labels.reduce((sum, label) => sum + label.length, 0) / labels.length;
+    const dateSequence = labels.every((label) => /^\d{4}[-/]\d{1,2}(?:[-/]\d{1,2})?$/.test(label.trim()));
+    return !dateSequence && ((labels.length >= 60 && averageLength > 6) || (averageLength > 10 && labels.some((label) => label.length >= 24)));
+  }
+
   function schedulePlotResize(component) {
     if (component._resizeFrame !== null || typeof root.requestAnimationFrame !== "function") return;
     component._resizeFrame = root.requestAnimationFrame(() => {
@@ -162,26 +188,42 @@
       this._fieldNote.textContent = this._defaultFieldNote || "";
       const xIndex = Math.max(0, columns.indexOf(this._xSelect?.value));
       const labels = rows.map((row, index) => String(row[xIndex] ?? index + 1).slice(0, 100));
-      const averageLabelLength = labels.reduce((sum, label) => sum + label.length, 0) / labels.length;
-      const horizontalBars = this.type === "bar" && labels.length > 12 && labels.length <= 120 && averageLabelLength > 10 && labels.some((label) => label.length >= 24) && labels.every((label) => numeric(label) === null);
+      const horizontalBars = this.type === "bar" && shouldUseHorizontalBars(labels);
       const traces = [];
       if (this.type === "pie") {
         const index = indexes[0];
-        traces.push({ type: "pie", labels, values: rows.map((row) => Math.max(0, numeric(row[index]) ?? 0)), hole: 0.25, textinfo: labels.length > 20 ? "none" : "label+percent", hovertemplate: "%{label}<br>%{value}<extra></extra>" });
+        const result = createPieTrace(rows, index, labels);
+        if (!result.trace) {
+          this._fieldNote.textContent = result.reason === "negative"
+            ? "Pie charts cannot represent negative values. Choose another graph type to see these values accurately."
+            : "This measure has no positive values to display as a pie chart. Choose another graph type.";
+          this.message(this._fieldNote.textContent);
+          return;
+        }
+        traces.push(result.trace);
+        const pieNotes = ["Pie uses the first selected measure and shows positive values as shares of their sum; zero and missing values are omitted."];
+        if (indexes.length > 1) pieNotes.push(`Showing ${columns[index]} only; choose one measure at a time for a pie chart.`);
+        if (result.trace.labels.length > 20) pieNotes.push("Slice labels are hidden for readability; hover over a slice to inspect its category and value.");
+        this._fieldNote.textContent = pieNotes.join(" ");
       } else if (this.type === "heatmap") {
         const x = labels;
         const y = indexes.map((index) => columns[index]);
         const z = indexes.map((index) => rows.map((row) => numeric(row[index])));
         traces.push({ type: "heatmap", x, y, z, colorscale: "Blues", hoverongaps: false });
+        if (indexes.length > 1) this._fieldNote.textContent = "Selected measures share one color scale; differences in units or ranges can affect comparisons.";
       } else if (this.type === "surface3d") {
         const result = create3DTrace(rows, columns, indexes, labels);
         traces.push(result.trace);
         if (result.fallback) this._fieldNote.textContent = "A 3D surface needs at least two selected numeric measures and two rows. Showing the available values as labeled 3D points.";
         else this._fieldNote.textContent = "A 3D surface connects values across row categories and selected measures; categories may not be continuous and measures may not share units.";
       } else if (this.type === "scatter") {
+        if (indexes.length > 1) this._fieldNote.textContent = "Selected measures share one value axis; differences in units or ranges can affect comparisons.";
         const xValues = rows.map((row, index) => row[xIndex] ?? index + 1);
         indexes.forEach((index) => traces.push({ type: "scatter", mode: "markers", name: columns[index], x: xValues, y: rows.map((row) => numeric(row[index])) }));
       } else {
+        if (indexes.length > 1) this._fieldNote.textContent = this.type === "area"
+          ? "Area mode stacks selected measures cumulatively. Use measures with comparable units and ranges; stacked values may otherwise be misleading."
+          : "Selected measures share one value axis; differences in units or ranges can affect comparisons.";
         indexes.forEach((index) => {
           const y = rows.map((row) => numeric(row[index]));
           if (this.type === "bar" && horizontalBars) traces.push({ type: "bar", orientation: "h", name: columns[index], x: y, y: labels });
@@ -202,5 +244,5 @@
     }
   }
   if (!customElements.get("grid-graph")) customElements.define("grid-graph", GridGraph);
-  if (typeof module !== "undefined" && module.exports) module.exports = { create3DTrace, schedulePlotResize, cancelPlotResize };
+  if (typeof module !== "undefined" && module.exports) module.exports = { create3DTrace, createPieTrace, shouldUseHorizontalBars, schedulePlotResize, cancelPlotResize };
 })(window);

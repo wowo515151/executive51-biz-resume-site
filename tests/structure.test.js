@@ -41,16 +41,18 @@ test("nine selected DataPages use shared panels and the homepage links only to t
     }
   }
   assert.ok(read("SiteHealthCanada.html").includes("https://open.canada.ca/data/en/dataset/1b6139bd-ed7e-4043-bc28-ff00e10f3109"), "Health Canada SitePage links the official CNF record");
-  const graphComponent = read("GridGraph.7b45e1f.js");
+  const graphComponent = read("GridGraph.4af309a.js");
   for (const mode of ["bar", "line", "area", "scatter", "pie", "heatmap", "surface3d"]) assert.ok(graphComponent.includes(`"${mode}"`), `GridGraph exposes ${mode}`);
   assert.ok(graphComponent.includes("categories may not be continuous and measures may not share units"), "3D surfaces explain categorical and unit interpretation limits");
+  assert.ok(graphComponent.includes("Area mode stacks selected measures cumulatively"), "stacked area charts disclose cumulative behavior and unit limits");
+  assert.ok(graphComponent.includes("Pie charts cannot represent negative values"), "pie charts explain when values cannot be represented faithfully");
   assert.match(read("index.html"), /href="graph\.html">Explore data graphs/, "homepage exposes the reviewed graph entry");
   assert.equal(/href="Data[^\"]+\.html"/.test(read("index.html")), false, "homepage does not link directly to dataset pages");
   assert.equal(/\bgraph\.html\b/.test(read("site-nav.js")), false, "shared navigation remains free of a graph link");
 });
 
 test("GridGraph exposes accessible field selectors and avoids defaulting to identifier-like measures", () => {
-  const graphComponent = read("GridGraph.7b45e1f.js");
+  const graphComponent = read("GridGraph.4af309a.js");
   assert.ok(graphComponent.includes('aria-label", "Category or X axis"'), "the category axis selector has an accessible label");
   assert.ok(graphComponent.includes('className = "series"'), "numeric series choices are grouped accessibly");
   assert.ok(graphComponent.includes("const MEASURE_HINT"), "identifier-like numeric columns are not selected by default");
@@ -64,7 +66,7 @@ test("all dataset pages request the current versioned GridGraph asset", () => {
   const dataPages = fs.readdirSync(site).filter((name) => /^Data.*\.html$/.test(name));
   assert.equal(dataPages.length, 9);
   for (const page of dataPages) {
-    assert.match(read(page), /<script src="GridGraph\.7b45e1f\.js" defer><\/script>/, `${page} avoids a stale cached chart component`);
+    assert.match(read(page), /<script src="GridGraph\.4af309a\.js" defer><\/script>/, `${page} avoids a stale cached chart component`);
   }
 });
 
