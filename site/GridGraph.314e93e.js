@@ -21,13 +21,19 @@
     const safeColumns = columns.map(safePlotlyText);
     const safeLabels = labels.map(safePlotlyText);
     if (rows.length >= 2 && indexes.length >= 2) {
+      const tickStep = Math.max(1, Math.ceil(safeLabels.length / 12));
+      const xTickValues = safeLabels.map((_label, rowIndex) => rowIndex)
+        .filter((rowIndex) => rowIndex % tickStep === 0 || rowIndex === safeLabels.length - 1);
       return {
         fallback: false,
+        xTickValues,
+        xTickText: xTickValues.map((rowIndex) => safeLabels[rowIndex]),
         trace: {
-          type: "surface", x: safeLabels, y: indexes.map((index) => safeColumns[index]),
+          type: "surface", x: safeLabels.map((_label, rowIndex) => rowIndex), y: indexes.map((index) => safeColumns[index]),
           z: indexes.map((index) => rows.map((row) => numeric(row[index]))),
+          customdata: indexes.map(() => safeLabels.slice()),
           connectgaps: false, colorscale: "Viridis",
-          hovertemplate: "%{x}<br>%{y}<br>%{z}<extra></extra>"
+          hovertemplate: "%{customdata}<br>%{y}: %{z}<extra></extra>"
         }
       };
     }
@@ -200,7 +206,10 @@
       const xIndex = Math.max(0, columns.indexOf(this._xSelect?.value));
       const labels = rows.map((row, index) => safePlotlyText(String(row[xIndex] ?? index + 1).slice(0, 100)));
       const horizontalBars = this.type === "bar" && shouldUseHorizontalBars(labels);
+      const is3d = this.type === "surface3d";
+      const surfaceFallback = is3d && (rows.length < 2 || indexes.length < 2);
       const traces = [];
+      let surfaceAxisTicks = null;
       if (this.type === "pie") {
         const index = indexes[0];
         const result = createPieTrace(rows, index, labels);
@@ -225,6 +234,7 @@
       } else if (this.type === "surface3d") {
         const result = create3DTrace(rows, columns, indexes, labels);
         traces.push(result.trace);
+        if (!result.fallback) surfaceAxisTicks = result;
         if (result.fallback) this._fieldNote.textContent = "A 3D surface needs at least two selected numeric measures and two rows. Showing the available values as labeled 3D points.";
         else this._fieldNote.textContent = "A 3D surface connects values across row categories and selected measures; categories may not be continuous and measures may not share units.";
       } else if (this.type === "scatter") {
@@ -243,10 +253,9 @@
           else if (this.type === "area") traces.push({ type: "scatter", mode: "lines", stackgroup: "one", name: safePlotlyText(columns[index]), x: labels, y });
         });
       }
-      const is3d = this.type === "surface3d";
       const labelMargin = horizontalBars ? Math.min(300, Math.max(140, Math.ceil(Math.max(...labels.map((label) => label.length)) * 6))) : 58;
-      const surfaceFallback = this.type === "surface3d" && (rows.length < 2 || indexes.length < 2);
-      const layout = { autosize: true, height: horizontalBars ? Math.min(2200, Math.max(620, rows.length * 18)) : 420, margin: { l: labelMargin, r: 24, t: 28, b: horizontalBars ? 60 : 90 }, paper_bgcolor: "#fff", plot_bgcolor: "#fff", font: { color: "#172b49" }, legend: { orientation: "h", y: -0.24 }, xaxis: { automargin: true, title: horizontalBars ? safePlotlyText(columns[indexes[0]]) : undefined, tickangle: labels.length > 12 && !horizontalBars ? -45 : 0 }, yaxis: { automargin: true, title: horizontalBars ? safePlotlyText(columns[xIndex]) : undefined }, ...(is3d ? { scene: { xaxis: { title: surfaceFallback ? "Row" : safePlotlyText(columns[xIndex]) }, yaxis: { title: surfaceFallback ? "Numeric series" : "Series" }, zaxis: { title: "Value" } } } : {}), ...(this.type === "bar" ? { barmode: "group" } : {}) };
+      const surfaceXAxisTicks = surfaceAxisTicks ? { type: "linear", tickmode: "array", tickvals: surfaceAxisTicks.xTickValues, ticktext: surfaceAxisTicks.xTickText } : {};
+      const layout = { autosize: true, height: horizontalBars ? Math.min(2200, Math.max(620, rows.length * 18)) : 420, margin: { l: labelMargin, r: 24, t: 28, b: horizontalBars ? 60 : 90 }, paper_bgcolor: "#fff", plot_bgcolor: "#fff", font: { color: "#172b49" }, legend: { orientation: "h", y: -0.24 }, xaxis: { automargin: true, title: horizontalBars ? safePlotlyText(columns[indexes[0]]) : undefined, tickangle: labels.length > 12 && !horizontalBars ? -45 : 0 }, yaxis: { automargin: true, title: horizontalBars ? safePlotlyText(columns[xIndex]) : undefined }, ...(is3d ? { scene: { xaxis: { title: surfaceFallback ? "Row" : safePlotlyText(columns[xIndex]), ...surfaceXAxisTicks }, yaxis: { title: surfaceFallback ? "Numeric series" : "Series" }, zaxis: { title: "Value" } } } : {}), ...(this.type === "bar" ? { barmode: "group" } : {}) };
       this._plot.querySelector(".note")?.remove();
       this._plot.style.height = `${layout.height}px`;
       this._plot.setAttribute("aria-label", `${this.type} graph for ${rows.length} table rows using ${indexes.length} numeric field${indexes.length === 1 ? "" : "s"}`);

@@ -16,8 +16,8 @@ test("3D mode uses labeled points when a surface cannot be formed", () => {
     define: (_name, definition) => { graphClass = definition; }
   };
   try {
-    delete require.cache[require.resolve("../site/GridGraph.af2c357.js")];
-    require("../site/GridGraph.af2c357.js");
+    delete require.cache[require.resolve("../site/GridGraph.314e93e.js")];
+    require("../site/GridGraph.314e93e.js");
   } finally {
     for (const [key, value] of Object.entries(saved)) {
       if (value === undefined) delete global[key];
@@ -26,7 +26,7 @@ test("3D mode uses labeled points when a surface cannot be formed", () => {
   }
 
   const rows = [["Vitamin C", "5"], ["Calcium", "12"], ["Sodium", ""]];
-  const result = graphClass && require("../site/GridGraph.af2c357.js").create3DTrace(
+  const result = graphClass && require("../site/GridGraph.314e93e.js").create3DTrace(
     rows, ["nutrient_web_name", "nutrient_value"], [1], rows.map((row) => row[0])
   );
   assert.equal(result.fallback, true);
@@ -38,20 +38,38 @@ test("3D mode uses labeled points when a surface cannot be formed", () => {
 });
 
 test("3D mode uses a surface when two measures and two rows are available", () => {
-  const create3DTrace = require("../site/GridGraph.af2c357.js").create3DTrace;
+  const create3DTrace = require("../site/GridGraph.314e93e.js").create3DTrace;
   const result = create3DTrace(
     [["North", "10", "3"], ["South", "20", "7"]],
     ["region", "population", "area"], [1, 2], ["North", "South"]
   );
   assert.equal(result.fallback, false);
   assert.equal(result.trace.type, "surface");
-  assert.deepEqual(result.trace.x, ["North", "South"]);
+  assert.deepEqual(result.trace.x, [0, 1]);
   assert.deepEqual(result.trace.y, ["population", "area"]);
   assert.deepEqual(result.trace.z, [[10, 20], [3, 7]]);
+  assert.deepEqual(result.xTickValues, [0, 1]);
+  assert.deepEqual(result.xTickText, ["North", "South"]);
+  assert.deepEqual(result.trace.customdata, [["North", "South"], ["North", "South"]]);
+  assert.match(result.trace.hovertemplate, /%\{customdata\}/);
+});
+
+test("3D surfaces thin dense category ticks without dropping hover labels or data", () => {
+  const { create3DTrace } = require("../site/GridGraph.314e93e.js");
+  const labels = Array.from({ length: 100 }, (_value, index) => `Municipality ${index + 1}`);
+  const rows = labels.map((_label, index) => [String(index + 1), String((index + 1) * 2)]);
+  const result = create3DTrace(rows, ["population", "area"], [0, 1], labels);
+  assert.equal(result.trace.x.length, 100);
+  assert.equal(result.trace.z[0].length, 100);
+  assert.equal(result.trace.customdata[0].length, 100);
+  assert.ok(result.xTickValues.length <= 12);
+  assert.equal(result.xTickValues.at(-1), 99);
+  assert.equal(result.xTickText.at(-1), "Municipality 100");
+  assert.equal(result.trace.customdata[0][50], "Municipality 51");
 });
 
 test("pie mode keeps positive values and omits zero or missing rows", () => {
-  const { createPieTrace } = require("../site/GridGraph.af2c357.js");
+  const { createPieTrace } = require("../site/GridGraph.314e93e.js");
   const result = createPieTrace(
     [["A", "5"], ["B", "0"], ["C", ""], ["D", "12"]],
     1,
@@ -63,21 +81,21 @@ test("pie mode keeps positive values and omits zero or missing rows", () => {
 });
 
 test("pie mode refuses negative values rather than silently converting them to zero", () => {
-  const { createPieTrace } = require("../site/GridGraph.af2c357.js");
+  const { createPieTrace } = require("../site/GridGraph.314e93e.js");
   const result = createPieTrace([["positive", "5"], ["negative", "-2"]], 1, ["positive", "negative"]);
   assert.equal(result.trace, null);
   assert.equal(result.reason, "negative");
 });
 
 test("pie mode reports when there are no positive values", () => {
-  const { createPieTrace } = require("../site/GridGraph.af2c357.js");
+  const { createPieTrace } = require("../site/GridGraph.314e93e.js");
   const result = createPieTrace([["zero", "0"], ["missing", ""]], 1, ["zero", "missing"]);
   assert.equal(result.trace, null);
   assert.equal(result.reason, "empty");
 });
 
 test("Plotly text values escape HTML metacharacters before chart rendering", () => {
-  const { safePlotlyText, createPieTrace, create3DTrace } = require("../site/GridGraph.af2c357.js");
+  const { safePlotlyText, createPieTrace, create3DTrace } = require("../site/GridGraph.314e93e.js");
   const hostile = `<img src=x onerror="alert('x')"> &`;
   const safe = "&lt;img src=x onerror=&quot;alert(&#39;x&#39;)&quot;&gt; &amp;";
   assert.equal(safePlotlyText(hostile), safe);
@@ -88,18 +106,20 @@ test("Plotly text values escape HTML metacharacters before chart rendering", () 
     [[hostile, "1", "3"], ["second", "2", "4"]],
     ["category", "<series>", "&amount"], [1, 2], [hostile, "second"]
   );
-  assert.deepEqual(matrix.trace.x, [safe, "second"]);
+  assert.deepEqual(matrix.trace.x, [0, 1]);
+  assert.deepEqual(matrix.xTickText, [safe, "second"]);
+  assert.deepEqual(matrix.trace.customdata[0], [safe, "second"]);
   assert.deepEqual(matrix.trace.y, ["&lt;series&gt;", "&amp;amount"]);
 });
 
 test("dense categorical bar labels use a readable horizontal layout", () => {
-  const { shouldUseHorizontalBars } = require("../site/GridGraph.af2c357.js");
+  const { shouldUseHorizontalBars } = require("../site/GridGraph.314e93e.js");
   const labels = Array.from({ length: 100 }, (_, index) => `Municipality ${index + 1}`);
   assert.equal(shouldUseHorizontalBars(labels), true);
 });
 
 test("date sequences retain a compact vertical bar layout", () => {
-  const { shouldUseHorizontalBars } = require("../site/GridGraph.af2c357.js");
+  const { shouldUseHorizontalBars } = require("../site/GridGraph.314e93e.js");
   const labels = Array.from({ length: 100 }, (_, index) => {
     const date = new Date(Date.UTC(2020, index, 1));
     return date.toISOString().slice(0, 10);
@@ -108,7 +128,7 @@ test("date sequences retain a compact vertical bar layout", () => {
 });
 
 test("identifier, order, and decimal fields are not selected as default measures", () => {
-  const { defaultMeasureNames } = require("../site/GridGraph.af2c357.js");
+  const { defaultMeasureNames } = require("../site/GridGraph.314e93e.js");
   assert.deepEqual(defaultMeasureNames([
     "nutrient_name_id", "nutrient_code", "nutrient_decimals", "nutrient_web_order", "nutrient_group_id"
   ]), []);
@@ -128,8 +148,8 @@ test("container resize coalesces Plotly size updates and cancels when disconnect
   global.HTMLElement = class {};
   global.customElements = { get: () => undefined, define: () => {} };
   try {
-    delete require.cache[require.resolve("../site/GridGraph.af2c357.js")];
-    const { schedulePlotResize, cancelPlotResize } = require("../site/GridGraph.af2c357.js");
+    delete require.cache[require.resolve("../site/GridGraph.314e93e.js")];
+    const { schedulePlotResize, cancelPlotResize } = require("../site/GridGraph.314e93e.js");
     const component = { _resizeFrame: null, _hasDrawn: true, _plot: {}, isConnected: true };
     schedulePlotResize(component);
     schedulePlotResize(component);
@@ -145,7 +165,7 @@ test("container resize coalesces Plotly size updates and cancels when disconnect
     assert.equal(frames.size, 0);
     assert.equal(resized, 1);
   } finally {
-    delete require.cache[require.resolve("../site/GridGraph.af2c357.js")];
+    delete require.cache[require.resolve("../site/GridGraph.314e93e.js")];
     for (const [key, value] of Object.entries(saved)) {
       if (value === undefined) delete global[key];
       else global[key] = value;
