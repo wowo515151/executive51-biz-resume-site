@@ -97,8 +97,8 @@ test("all public graph pages declare a time axis and numeric measures", () => {
   assert.match(projection, /This page requests up to 100 source records\. It is a partial view, and source ordering is not a ranking or representative sample\./, "the chart note change preserves the returned-sample caveat");
   assert.match(projection, /estimates for 2001–2025 and projections for 2026–2051/i, "the source description distinguishes estimates from projections");
   assert.match(read("DataPopulationEstimates.html"), /data-time-field="Reference period"/);
-  assert.equal(/href="graph\.html"/.test(read("index.html")), false, "homepage does not link to the graph section before review and visual verification");
-  assert.match(read("index.html"), /Interactive views of selected Canadian public data are coming soon\./, "homepage accurately describes graph availability to visitors");
+  assert.match(read("index.html"), /href="graph\.html">Browse data graphs/, "homepage links visitors to the graph directory");
+  assert.match(read("index.html"), /interactive charts built from selected public datasets from Statistics Canada and Données Québec/i, "homepage describes the available graph providers");
   assert.doesNotMatch(read("index.html"), /Browse public datasets from Statistics Canada, Health Canada, and Données Québec/, "homepage does not imply unavailable provider coverage");
   assert.equal(/href="Data[^\"]+\.html"/.test(read("index.html")), false, "homepage does not link directly to dataset pages");
   assert.equal(/graph\.html/.test(read("site-nav.js")), false, "shared navigation remains free of a graph link");
