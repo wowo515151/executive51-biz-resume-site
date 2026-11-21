@@ -41,7 +41,7 @@ test("nine selected DataPages use shared panels and the homepage links only to t
     }
   }
   assert.ok(read("SiteHealthCanada.html").includes("https://open.canada.ca/data/en/dataset/1b6139bd-ed7e-4043-bc28-ff00e10f3109"), "Health Canada SitePage links the official CNF record");
-  const graphComponent = read("GridGraph.113ba4d.js");
+  const graphComponent = read("GridGraph.330cbb4.js");
   for (const mode of ["bar", "line", "area", "scatter", "pie", "heatmap", "surface3d"]) assert.ok(graphComponent.includes(`"${mode}"`), `GridGraph exposes ${mode}`);
   assert.match(graphComponent, /const TYPES = \["line", "bar"/, "Line precedes Bar in the graph mode selector");
   for (const page of ["DataPopulationEstimates.html", "DataLabourForce.html", "DataConsumerPrices.html"]) {
@@ -60,7 +60,7 @@ test("nine selected DataPages use shared panels and the homepage links only to t
 });
 
 test("GridGraph exposes accessible field selectors and avoids defaulting to identifier-like measures", () => {
-  const graphComponent = read("GridGraph.113ba4d.js");
+  const graphComponent = read("GridGraph.330cbb4.js");
   assert.ok(graphComponent.includes('aria-label", "Category or X axis"'), "the category axis selector has an accessible label");
   assert.ok(graphComponent.includes('className = "series"'), "numeric series choices are grouped accessibly");
   assert.ok(graphComponent.includes("const MEASURE_HINT"), "identifier-like numeric columns are not selected by default");
