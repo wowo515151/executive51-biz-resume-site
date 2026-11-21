@@ -41,13 +41,31 @@
     };
   }
 
+  function schedulePlotResize(component) {
+    if (component._resizeFrame !== null || typeof root.requestAnimationFrame !== "function") return;
+    component._resizeFrame = root.requestAnimationFrame(() => {
+      component._resizeFrame = null;
+      if (!component.isConnected || !component._hasDrawn) return;
+      const resize = root.Plotly?.Plots?.resize;
+      if (typeof resize === "function") resize.call(root.Plotly.Plots, component._plot);
+    });
+  }
+
+  function cancelPlotResize(component) {
+    if (component._resizeFrame === null) return;
+    if (typeof root.cancelAnimationFrame === "function") root.cancelAnimationFrame(component._resizeFrame);
+    component._resizeFrame = null;
+  }
+
   class GridGraph extends HTMLElement {
     constructor() {
       super();
       this.attachShadow({ mode: "open" });
       this.table = { columns: [], rows: [] };
       this.type = "bar";
-      this._resize = () => this.draw();
+      this._resizeFrame = null;
+      this._hasDrawn = false;
+      this._resize = () => schedulePlotResize(this);
     }
     connectedCallback() {
       this.render();
@@ -58,6 +76,8 @@
     }
     disconnectedCallback() {
       this._observer?.disconnect();
+      cancelPlotResize(this);
+      this._hasDrawn = false;
       if (root.Plotly && this._plot) root.Plotly.purge(this._plot);
     }
     set data(table) {
@@ -126,6 +146,7 @@
       this._defaultFieldNote = this._fieldNote.textContent;
     }
     message(text, isError = false) {
+      this._hasDrawn = false;
       if (root.Plotly) root.Plotly.purge(this._plot);
       this._plot.replaceChildren();
       const p = document.createElement("p"); p.className = isError ? "note error" : "note"; p.textContent = text; this._plot.append(p);
@@ -175,8 +196,9 @@
       this._plot.querySelector(".note")?.remove();
       this._plot.setAttribute("aria-label", `${this.type} graph for ${rows.length} table rows using ${indexes.length} numeric field${indexes.length === 1 ? "" : "s"}`);
       root.Plotly.react(this._plot, traces, layout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ["sendDataToCloud"] });
+      this._hasDrawn = true;
     }
   }
   if (!customElements.get("grid-graph")) customElements.define("grid-graph", GridGraph);
-  if (typeof module !== "undefined" && module.exports) module.exports = { create3DTrace };
+  if (typeof module !== "undefined" && module.exports) module.exports = { create3DTrace, schedulePlotResize, cancelPlotResize };
 })(window);
