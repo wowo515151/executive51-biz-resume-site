@@ -84,8 +84,9 @@
     if (values.length > MAX_ROWS) throw new Error("Dataset exceeds the row limit.");
     if (!values.length) return { columns: [], rows: [] };
     if (Array.isArray(values[0])) {
-      const columns = values[0].slice(0, MAX_COLUMNS).map((_, i) => `Column ${i + 1}`);
-      return { columns, rows: values.map((r) => columns.map((_, i) => r[i] ?? "")) };
+      const width = Math.min(MAX_COLUMNS, values.reduce((max, row) => Math.max(max, Array.isArray(row) ? row.length : 0), 0));
+      const columns = Array.from({ length: width }, (_, i) => `Column ${i + 1}`);
+      return { columns, rows: values.map((r) => columns.map((_, i) => Array.isArray(r) && r[i] != null ? String(r[i]).slice(0, 20_000) : "")) };
     }
     if (!values[0] || typeof values[0] !== "object") throw new Error("The response rows are not records.");
     const columns = [...new Set(values.flatMap((r) => Object.keys(r || {})))].slice(0, MAX_COLUMNS);

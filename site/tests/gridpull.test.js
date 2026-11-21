@@ -21,7 +21,13 @@ test("JSON normalizer accepts the CNF result envelope", () => {
   assert.deepEqual(table.rows, [["109", "12.5"]]);
 });
 
-test("JSON normalizer rejects oversized row and column sets", () => {
+test("JSON normalizer preserves cells in uneven array rows", () => {
+  const table = Gridpull.normalizeJSON([["Jan", 10], ["Feb", 12, "revised"]]);
+  assert.deepEqual(table.columns, ["Column 1", "Column 2", "Column 3"]);
+  assert.deepEqual(table.rows, [["Jan", "10", ""], ["Feb", "12", "revised"]]);
+});
+
+test("JSON normalizer enforces row and column limits", () => {
   assert.throws(() => Gridpull.normalizeJSON(Array.from({ length: 20001 }, () => ({ value: 1 }))), /row limit/);
   assert.equal(Gridpull.normalizeJSON([[...Array(101).keys()] ]).columns.length, 100);
 });
