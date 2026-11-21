@@ -8,7 +8,11 @@
     const n = Number(value.replace(/[,$%\s]/g, ""));
     return Number.isFinite(n) ? n : null;
   };
-  const MEASURE_HINT = /(^|[_\s-])(id|code|order|rank|sequence|index|decimal|precision|count|source)([_\s-]|$)|(^|[_\s-])(standard[_\s-]?error|error)([_\s-]|$)/i;
+  const MEASURE_HINT = /(^|[_\s-])(id|code|order|rank|sequence|index|decimals?|precision|count|source)([_\s-]|$)|(^|[_\s-])(standard[_\s-]?error|error)([_\s-]|$)/i;
+
+  function defaultMeasureNames(numericNames) {
+    return numericNames.filter((name) => !MEASURE_HINT.test(name)).slice(0, 3);
+  }
 
   function create3DTrace(rows, columns, indexes, labels) {
     if (rows.length >= 2 && indexes.length >= 2) {
@@ -157,7 +161,7 @@
       const preferred = (this.getAttribute("data-default-y") || "").split(",").map((name) => name.trim()).filter((name) => columns.includes(name));
       const numericNames = numericIndexes.map((index) => columns[index]);
       let selected = preferred.length ? new Set(preferred) : previousY;
-      if (!selected.size) selected = new Set(numericNames.filter((name) => !MEASURE_HINT.test(name)).slice(0, 3));
+      if (!selected.size) selected = new Set(defaultMeasureNames(numericNames));
       this._seriesOptions.replaceChildren();
       numericIndexes.slice(0, 100).forEach((index) => {
         const name = columns[index], label = document.createElement("label"), input = document.createElement("input");
@@ -166,9 +170,10 @@
         const text = document.createElement("span"); text.textContent = name;
         label.append(input, text); this._seriesOptions.append(label);
       });
+      const defaultNote = "Identifier-like, code, order, rank, sequence, index, decimal, precision, count, source, and error fields are left unselected by default.";
       this._fieldNote.textContent = numericIndexes.length > 100
-        ? "Choose up to 100 numeric fields. Identifier-like columns are left unselected by default."
-        : "Identifier, code, order, and precision fields are left unselected by default; choose any field when it is meaningful for your view.";
+        ? `Choose up to 100 numeric fields. ${defaultNote}`
+        : `${defaultNote} Choose any field when it is meaningful for your view.`;
       this._defaultFieldNote = this._fieldNote.textContent;
     }
     message(text, isError = false) {
@@ -244,5 +249,5 @@
     }
   }
   if (!customElements.get("grid-graph")) customElements.define("grid-graph", GridGraph);
-  if (typeof module !== "undefined" && module.exports) module.exports = { create3DTrace, createPieTrace, shouldUseHorizontalBars, schedulePlotResize, cancelPlotResize };
+  if (typeof module !== "undefined" && module.exports) module.exports = { create3DTrace, createPieTrace, shouldUseHorizontalBars, defaultMeasureNames, schedulePlotResize, cancelPlotResize };
 })(window);
