@@ -9,6 +9,12 @@ test("CSV parser handles quoted separators, escaped quotes, and blank cells", ()
   assert.deepEqual(table.rows, [["A, B", "12", 'x "quoted"'], ["C", "", "last"]]);
 });
 
+test("CSV parser removes a UTF-8 BOM from the first header", () => {
+  const table = Gridpull.parseCSV("\uFEFFname,value\nQuébec,42");
+  assert.deepEqual(table.columns, ["name", "value"]);
+  assert.deepEqual(table.rows, [["Québec", "42"]]);
+});
+
 test("JSON normalizer unions record columns and fills missing cells", () => {
   const table = Gridpull.normalizeJSON([{ date: "2026-01", value: 2 }, { date: "2026-02", extra: 3 }]);
   assert.deepEqual(table.columns, ["date", "value", "extra"]);

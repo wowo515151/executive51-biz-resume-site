@@ -63,6 +63,7 @@
     return { site: { id: siteId, name: site.name, url: site.url }, dataset: { id: datasetId, ...dataset } };
   }
   function parseCSV(text) {
+    text = String(text).replace(/^\uFEFF/, "");
     const rows = [];
     let row = [], cell = "", quoted = false;
     for (let i = 0; i < text.length; i++) {
