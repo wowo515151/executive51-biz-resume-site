@@ -54,9 +54,9 @@ test("GridGraph exposes accessible field selectors and avoids defaulting to iden
   assert.ok(graphComponent.includes('aria-label", "Category or X axis"'), "the category axis selector has an accessible label");
   assert.ok(graphComponent.includes('className = "series"'), "numeric series choices are grouped accessibly");
   assert.ok(graphComponent.includes("const MEASURE_HINT"), "identifier-like numeric columns are not selected by default");
-  assert.ok(graphComponent.includes("{ responsive: true"), "Plotly handles viewport resize without a duplicate chart redraw observer");
-  assert.equal(graphComponent.includes("ResizeObserver"), false, "GridGraph does not observe its own content size and create a resize feedback loop");
-  assert.ok(graphComponent.includes('this._plot.style.height = `${layout.height}px`'), "the responsive plot receives a fixed height to avoid autosize feedback");
+  assert.ok(graphComponent.includes('this._resize = () => schedulePlotResize(this)'), "container changes schedule a Plotly resize without rebuilding traces");
+  assert.equal(graphComponent.includes("this._resize = () => this.draw()"), false, "container changes do not redraw chart data");
+  assert.ok(graphComponent.includes('this._plot.style.height = `${layout.height}px`'), "the responsive plot has a fixed height to prevent autosize feedback");
   assert.ok(read("DataCNFNutrientAmounts.html").includes('data-default-x="nutrient_web_name" data-default-y="nutrient_value"'), "nutrient chart defaults to the named nutrient value series");
 });
 

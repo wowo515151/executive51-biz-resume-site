@@ -49,3 +49,41 @@ test("3D mode uses a surface when two measures and two rows are available", () =
   assert.deepEqual(result.trace.y, ["population", "area"]);
   assert.deepEqual(result.trace.z, [[10, 20], [3, 7]]);
 });
+
+test("container resize coalesces Plotly size updates and cancels when disconnected", () => {
+  const saved = { window: global.window, HTMLElement: global.HTMLElement, customElements: global.customElements };
+  const frames = new Map();
+  let nextFrame = 1, resized = 0, cancelled = 0;
+  const root = {
+    requestAnimationFrame(callback) { const id = nextFrame++; frames.set(id, callback); return id; },
+    cancelAnimationFrame(id) { if (frames.delete(id)) cancelled++; },
+    Plotly: { Plots: { resize: () => { resized++; } } }
+  };
+  global.window = root;
+  global.HTMLElement = class {};
+  global.customElements = { get: () => undefined, define: () => {} };
+  try {
+    delete require.cache[require.resolve("../site/GridGraph.js")];
+    const { schedulePlotResize, cancelPlotResize } = require("../site/GridGraph.js");
+    const component = { _resizeFrame: null, _hasDrawn: true, _plot: {}, isConnected: true };
+    schedulePlotResize(component);
+    schedulePlotResize(component);
+    assert.equal(frames.size, 1);
+    const [frameId, callback] = frames.entries().next().value;
+    frames.delete(frameId);
+    callback();
+    assert.equal(resized, 1);
+    assert.equal(component._resizeFrame, null);
+    schedulePlotResize(component);
+    cancelPlotResize(component);
+    assert.equal(cancelled, 1);
+    assert.equal(frames.size, 0);
+    assert.equal(resized, 1);
+  } finally {
+    delete require.cache[require.resolve("../site/GridGraph.js")];
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete global[key];
+      else global[key] = value;
+    }
+  }
+});
