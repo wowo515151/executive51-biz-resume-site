@@ -1,4 +1,4 @@
-/* Public, keyless tabular data registry and loader. Responses are untrusted. */
+/* Tabular data registry and bounded loader. Verify source access before activation. */
 (function (root) {
   "use strict";
 
