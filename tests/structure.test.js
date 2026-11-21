@@ -60,6 +60,14 @@ test("GridGraph exposes accessible field selectors and avoids defaulting to iden
   assert.ok(read("DataCNFNutrientAmounts.html").includes('data-default-x="nutrient_web_name" data-default-y="nutrient_value"'), "nutrient chart defaults to the named nutrient value series");
 });
 
+test("all dataset pages request the current versioned GridGraph asset", () => {
+  const dataPages = fs.readdirSync(site).filter((name) => /^Data.*\.html$/.test(name));
+  assert.equal(dataPages.length, 9);
+  for (const page of dataPages) {
+    assert.match(read(page), /<script src="GridGraph\.js\?v=c283402" defer><\/script>/, `${page} avoids a stale cached chart component`);
+  }
+});
+
 test("Azure deployment pins checkout immutably and does not persist its token", () => {
   const workflow = fs.readFileSync(path.resolve(site, "..", ".github", "workflows", "azure-static-web-apps.yml"), "utf8");
   assert.match(workflow, /uses: actions\/checkout@[a-f0-9]{40}/, "checkout uses a full commit SHA");
