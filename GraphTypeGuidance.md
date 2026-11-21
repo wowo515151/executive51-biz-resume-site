@@ -1,4 +1,25 @@
-# Graph type guidance
+# CURRENT DIRECTION — TIME-SERIES-ONLY GRAPH UPGRADE (2026-11-21)
+
+Warren directed that the active graph upgrade focus exclusively on time series. Every included page must plot a real date/month/quarter/year axis chronologically. One or multiple numeric measures may be plotted only when explicitly approved and semantically understood; any additional graphable measure column must be numeric. Other fields may identify time, label series, or filter to a coherent series, but may not be treated as measures. Work/Spec.html remains authoritative and unchanged.
+
+Verified local working-tree state (2026-11-21): at HEAD 726b3b4, uncommitted changes implement a two-provider, four-page directory (three Statistics Canada series and Québec population estimates/projections), explicit time-axis and numeric-measure validation, and disablement of the five cross-sectional pages and their loader routes. GridGraph.47fe12a.js is the new asset. Synthetic tests exercise one and multiple numeric series; 38/38 tests and syntax/diff checks pass. No real multi-series page, third provider, complete 3×3 dataset set, or live verification is established. These changes are not committed or deployed.
+
+| Series shape | Suitable options | Conditions |
+| --- | --- | --- |
+| One numeric measure over time | Line (default), Bar, Scatter, conditional Area | Keep time on X. Bar is suitable for discrete periods; Area needs a clear temporal/cumulative meaning. |
+| Multiple numeric series over time | Line, grouped Bar, Scatter, conditional Area | Require comparable units, scales, definitions, and time coverage. Stacked Area only when totals are meaningful. |
+| Time-by-series matrix | Conditional Heatmap | Require interpretable time and series dimensions plus comparable or properly normalized values. |
+| Any time series | Pie or 3D | Not defaults; need a separately documented time-series interpretation and suitable numeric axes. |
+
+Never combine incompatible units on one scale. A graph control must show only options approved for its verified time-series shape. A category chart without a temporal axis is out of scope.
+
+Current inventory: Statistics Canada population estimates, labour force, and consumer prices are included locally as single-series pages. Données Québec population estimates/projections is included with year as the temporal axis and territory, data-type, and sex filtering; the catalogue describes estimates for 2001–2025 and projections for 2026–2051, but no bounded live sample or additional comparable numeric measures have been verified. Health Canada CNF Gouda, salmon, and apple nutrient pages are cross-sectional snapshots; Données Québec municipal population/area is a cross-section; municipal finance is a 2025 snapshot. Those five pages and their loaders are disabled in the local working tree. Reentry requires a verified time-series basis. No real route has been verified to supply multiple comparable numeric series over time.
+
+Unverified Health Canada lead: “Airborne Radionuclide Concentrations Dataset,” https://open.canada.ca/data/en/dataset/aa698863-f689-4dd6-be12-1a9fa513f04b. The signed-out catalogue view lists daily updates, per-station past-12-month CSV access, an ESRI REST map service, and Open Government Licence – Canada. API time-series access, CORS, bounds, limits, field semantics, cadence, station grouping, and unit comparability remain unverified. Do not download data, enable the source, or infer the map service exposes observations; check official documentation first.
+
+Deployment remains gated: Auto Review rejected the attempted push of 726b3b4 because private project source egress lacked explicit authorization. The exact push requires explicit user approval; no workaround or indirect route. Last verified deployment remains 0fb41eb / Azure run 44909815097.
+
+# Historical graph type guidance
 
 This document defines which graph types are suitable for the current data and what a dataset must provide before a graph type is enabled. Dataset pages declare their approved numeric measures and eligible graph types. The graph control shows only those declared choices. The loader rejects a dataset without a numeric observation in an approved measure.
 

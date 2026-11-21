@@ -29,7 +29,11 @@
   const status = document.querySelector("[data-load-status]");
   const graph = document.querySelector("grid-graph");
   const tableWrap = document.querySelector("[data-table-preview]");
-  if (!Array.isArray(info.dataset.graphableFields) || !info.dataset.graphableFields.length) {
+  if (!info.dataset.timeSeries) {
+    loadButton.disabled = true;
+    status.textContent = "This page is disabled because its dataset does not meet the reviewed time-series requirements.";
+    graph.setAttribute("data-disabled", "true");
+  } else if (!Array.isArray(info.dataset.graphableFields) || !info.dataset.graphableFields.length) {
     loadButton.disabled = true;
     status.textContent = "This source contains labels or reference fields but no approved numeric measure for graphing.";
   } else if (!info.dataset.verified || !info.dataset.fetchURL) {

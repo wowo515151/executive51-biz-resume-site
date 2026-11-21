@@ -5,107 +5,72 @@ const fs = require("node:fs");
 const path = require("node:path");
 const site = path.resolve(__dirname, "..", "site");
 const read = (name) => fs.readFileSync(path.join(site, name), "utf8");
+const activePages = ["DataPopulationEstimates.html", "DataLabourForce.html", "DataConsumerPrices.html", "DataQuebecPopulationProjections.html"];
 
-test("graph entry links reviewed provider pages, each with eligible unique data pages", () => {
+test("graph directory links only providers with reviewed time-series datasets", () => {
   const graph = read("graph.html");
-  const providers = ["SiteStatisticsCanada.html", "SiteHealthCanada.html", "SiteDonneesQuebec.html"];
-  for (const provider of providers) {
-    assert.ok(graph.includes(`href="${provider}"`), `graph.html links ${provider}`);
+  assert.deepEqual([...graph.matchAll(/href="(Site[^\"]+\.html)"/g)].map((match) => match[1]), ["SiteStatisticsCanada.html", "SiteDonneesQuebec.html"]);
+  for (const [provider, expectedPages] of [["SiteStatisticsCanada.html", activePages.slice(0, 3)], ["SiteDonneesQuebec.html", [activePages[3]]]]) {
     const html = read(provider);
-    const links = [...html.matchAll(/href="(Data[^"]+\.html)"/g)].map((match) => match[1]);
-    const expectedLinks = 3;
-    assert.equal(links.length, expectedLinks, `${provider} lists only graphable datasets`);
-    assert.equal(new Set(links).size, expectedLinks, `${provider} links are unique`);
-    for (const link of links) {
-      assert.ok(fs.existsSync(path.join(site, link)), `${provider} target ${link} exists`);
-      const dataPage = read(link);
+    const links = [...html.matchAll(/href="(Data[^\"]+\.html)"/g)].map((match) => match[1]);
+    assert.deepEqual(links, expectedPages, `${provider} lists only eligible time-series pages`);
+    for (const name of links) {
+      const dataPage = read(name);
       const description = dataPage.match(/<p class="graph-description" data-dataset-description>(.*?)<\/p>/)?.[1];
-      assert.ok(description && html.includes(description), `${provider} includes ${link}'s dataset description`);
-      assert.match(dataPage, /data-dataset-source href="https:\/\//, `${link} links to its official source`);
-      assert.match(dataPage, /<a class="graph-source-link" data-dataset-source href="https:\/\/[^\"]+" rel="noopener noreferrer">[^<]+<\/a>(?:\s*<a class="graph-source-link" href="https:\/\/[^\"]+" rel="noopener noreferrer">[^<]+<\/a>){0,2}<p class="(?:graph-note|graph-attribution)">/, `${link} closes its source links before attribution`);
+      assert.ok(description && html.includes(description), `${provider} includes ${name}'s page description`);
+      assert.match(dataPage, /data-dataset-source href="https:\/\//, `${name} links to its official source`);
     }
   }
+  assert.equal(read("SiteHealthCanada.html").includes("href=\"Data"), false, "cross-sectional Health Canada records are not navigable graph pages");
 });
 
-test("nine graphable DataPages use shared panels and the homepage links only to the graph entry", () => {
-  const providers = ["SiteStatisticsCanada.html", "SiteHealthCanada.html", "SiteDonneesQuebec.html"];
-  const pages = providers.flatMap((provider) => [...read(provider).matchAll(/href="(Data[^"]+\.html)"/g)].map((match) => match[1]));
-  assert.equal(new Set(pages).size, 9, "selected providers link nine graphable datasets");
-  assert.equal(pages.length, 9);
-  for (const name of pages) {
+test("all public graph pages declare a time axis and numeric measures", () => {
+  const pages = ["SiteStatisticsCanada.html", "SiteDonneesQuebec.html"].flatMap((name) => [...read(name).matchAll(/href="(Data[^\"]+\.html)"/g)].map((match) => match[1]));
+  assert.deepEqual(pages, activePages);
+  for (const name of activePages) {
     const html = read(name);
-    for (const marker of ["data-site=", "data-dataset=", "data-dataset-description", "grid-graph", "graph-ad-panel", "data-load-dataset", "<footer"]) {
-      assert.ok(html.includes(marker), `${name} includes ${marker}`);
-    }
-    if (html.includes('data-site="healthcanada"')) {
-      assert.ok(html.includes("https://open.canada.ca/data/en/dataset/1b6139bd-ed7e-4043-bc28-ff00e10f3109"), `${name} links the official Health Canada CNF record`);
-    }
+    for (const marker of ["data-site=", "data-dataset=", "data-dataset-description", "grid-graph data-time-series=\"true\"", "data-time-field=", "graph-ad-panel", "data-load-dataset", "<footer"]) assert.ok(html.includes(marker), `${name} includes ${marker}`);
+    assert.match(html, /data-graphable-y="[A-Za-z0-9_,]+"/);
+    assert.match(html, /data-graph-types="line,bar,area,scatter"/, `${name} exposes only time-series chart choices`);
+    assert.match(html, /data-default-type="line"/, `${name} defaults to a line chart`);
+    assert.match(html, /GridGraph\.[a-f0-9]{7}\.js/, `${name} uses the revised versioned graph component`);
+    assert.match(html, /gridpull\.js\?v=timeseries-20261121/, `${name} cache-busts the strict loader`);
+    assert.match(html, /graph-data\.js\?v=timeseries-20261121/, `${name} cache-busts the page controller`);
   }
-  assert.ok(read("SiteHealthCanada.html").includes("https://open.canada.ca/data/en/dataset/1b6139bd-ed7e-4043-bc28-ff00e10f3109"), "Health Canada SitePage links the official CNF record");
-  assert.ok(read("DataCNFNutrientAmounts.html").includes("https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&amp;type=json"), "nutrient graph links the official unit definitions it joins");
-  const graphComponent = read("GridGraph.e87870a.js");
-  assert.ok(graphComponent.includes("graphableNumericIndexes"), "the graph component admits only explicitly approved numeric measures");
-  assert.ok(graphComponent.includes('getAttribute("data-graphable-y")'), "the measure whitelist is set per dataset");
-  for (const mode of ["bar", "line", "area", "scatter", "pie", "heatmap", "surface3d"]) assert.ok(graphComponent.includes(`"${mode}"`), `GridGraph exposes ${mode}`);
-  assert.match(graphComponent, /const TYPES = \["line", "bar"/, "Line precedes Bar in the graph mode selector");
-  for (const page of ["DataPopulationEstimates.html", "DataLabourForce.html", "DataConsumerPrices.html"]) {
-    assert.match(read(page), /<grid-graph data-time-series="true"[^>]*data-graphable-y="Value"/, `${page} enables graphable two-column time-series controls`);
-  }
-  assert.ok(graphComponent.includes('setAttribute("aria-label", "Start date")'), "time-series ranges expose an accessible start date");
-  assert.ok(graphComponent.includes('setAttribute("aria-label", "End date")'), "time-series ranges expose an accessible end date");
-  assert.ok(read("DataPopulationEstimates.html").includes('data-default-type="line"'), "time-series graphs default to Line");
-  assert.match(read("DataPopulationEstimates.html"), /data-time-series="true"[^>]*data-graph-types="line,bar,area,scatter"/, "time-series charts expose sequential chart types only");
-  assert.match(read("DataQuebecMunicipalPopulation.html"), /data-graph-types="bar"/, "municipality categories expose categorical bar charts only");
-  const projectionPage = read("DataQuebecPopulationProjections.html");
-  assert.match(projectionPage, /data-required-filters="Territoire,TypeDonnees,Sexe"/, "population projections require one territory, data type, and sex");
-  assert.match(projectionPage, /data-sort-x="Annee"/, "the selected projection series is sorted by year before charting");
-  assert.match(projectionPage, /data-default-type="line"[^>]*data-graph-types="line,bar,area,scatter"/, "the grouped projection series offers ordered sequential chart types");
-  for (const page of ["DataQuebecPopulationProjections.html", "DataQuebecMunicipalPopulation.html", "DataQuebecMunicipalFinance.html"]) {
-    const html = read(page);
-    assert.match(html, /partial view, and source ordering is not a ranking or representative sample/i, `${page} discloses the sampled rows and source ordering`);
-  }
-  assert.ok(graphComponent.includes("categories may not be continuous and measures may not share units"), "3D surfaces explain categorical and unit interpretation limits");
-  assert.ok(graphComponent.includes("Dense x-axis labels are sampled and shortened; hover for full category names"), "dense 3D axes disclose shortened labels and full hover names");
-  assert.ok(graphComponent.includes("Area mode stacks selected measures cumulatively"), "stacked area charts disclose cumulative behavior and unit limits");
-  assert.ok(graphComponent.includes("Pie charts cannot represent negative values"), "pie charts explain when values cannot be represented faithfully");
-  assert.match(read("index.html"), /href="graph\.html">Explore data graphs/, "homepage exposes the reviewed graph entry");
+  const projection = read("DataQuebecPopulationProjections.html");
+  assert.match(projection, /data-time-field="Annee"/);
+  assert.match(projection, /data-required-filters="NiveauGeographique,Territoire,TypeDonnees,Sexe"/);
+  assert.match(projection, /estimates for 2001–2025 and projections for 2026–2051/i, "the source description distinguishes estimates from projections");
+  assert.match(read("DataPopulationEstimates.html"), /data-time-field="Reference period"/);
   assert.equal(/href="Data[^\"]+\.html"/.test(read("index.html")), false, "homepage does not link directly to dataset pages");
-  assert.equal(/\bgraph\.html\b/.test(read("site-nav.js")), false, "shared navigation remains free of a graph link");
+  assert.equal(/graph\.html/.test(read("site-nav.js")), false, "shared navigation remains free of a graph link");
 });
 
-test("GridGraph exposes accessible field selectors and avoids defaulting to identifier-like measures", () => {
-  const graphComponent = read("GridGraph.e87870a.js");
-  assert.ok(graphComponent.includes('aria-label", "Category or X axis"'), "the category axis selector has an accessible label");
-  assert.ok(graphComponent.includes('className = "series"'), "numeric series choices are grouped accessibly");
-  assert.ok(graphComponent.includes("const MEASURE_HINT"), "identifier-like numeric columns are not selected by default");
-  assert.ok(graphComponent.includes('this._resize = () => schedulePlotResize(this)'), "container changes schedule a Plotly resize without rebuilding traces");
-  assert.equal(graphComponent.includes("this._resize = () => this.draw()"), false, "container changes do not redraw chart data");
-  assert.ok(graphComponent.includes('this._plot.style.height = `${layout.height}px`'), "the responsive plot has a fixed height to prevent autosize feedback");
-  assert.ok(graphComponent.includes("safePlotlyText(String(row[xIndex] ?? index + 1).slice(0, 100))"), "provider category labels are escaped before reaching Plotly");
-  assert.ok(graphComponent.includes("name: safePlotlyText(columns[index])"), "provider field names are escaped before reaching Plotly");
-  assert.ok(read("DataCNFNutrientAmounts.html").includes('data-default-x="nutrient_web_name" data-default-y="nutrient_value"'), "nutrient chart defaults to the named nutrient value series");
-  assert.ok(graphComponent.includes('getAttribute("data-unit-field")'), "nutrient charts can filter plotted observations by official units");
-  assert.ok(graphComponent.includes("Measurement unit"), "unit selector explains its control purpose");
-  assert.ok(read("DataCNFNutrientAmounts.html").includes('data-default-unit="g"'), "nutrient chart defaults to grams per 100 grams");
-});
-
-test("all dataset pages request the current versioned GridGraph asset", () => {
-  const dataPages = fs.readdirSync(site).filter((name) => /^Data.*\.html$/.test(name));
-  assert.equal(dataPages.length, 9);
-  for (const page of dataPages) {
-    assert.match(read(page), /<script src="GridGraph\.[a-f0-9]{7}\.js" defer><\/script>/, `${page} requests a versioned chart component`);
-    assert.match(read(page), /data-graphable-y="[A-Za-z0-9_,]+"/, `${page} configures approved numeric graph measures`);
-    assert.match(read(page), /data-graph-types="(bar|line,bar,area,scatter)"/, `${page} declares only suitable graph types`);
+test("cross-sectional direct pages and loader paths are disabled", () => {
+  const graphData = read("graph-data.js");
+  const loader = read("gridpull.js");
+  const component = read("GridGraph.d2f01c3.js");
+  assert.ok(graphData.includes("This page is disabled because its dataset does not meet the reviewed time-series requirements."));
+  assert.ok(loader.includes("Only reviewed time-series datasets can be graphed"));
+  assert.ok(loader.includes("isTimeSeriesTable(table"));
+  assert.ok(component.includes('this.getAttribute("data-time-series") !== "true"'));
+  assert.ok(component.includes("TIME_SERIES_TYPES"));
+  for (const name of fs.readdirSync(site).filter((file) => /^Data.*\.html$/.test(file) && !activePages.includes(file))) {
+    assert.match(read(name), /gridpull\.js\?v=timeseries-20261121/);
+    assert.match(read(name), /graph-data\.js\?v=timeseries-20261121/);
   }
-  assert.ok(fs.existsSync(path.resolve(site, "..", "GraphTypeGuidance.md")), "the graph type usage guide is available with the project source");
 });
 
-test("label-only CNF datasets are excluded from the public graph directory", () => {
-  const health = read("SiteHealthCanada.html");
-  assert.equal(health.includes("DataCNFFood.html"), false);
-  assert.equal(health.includes("DataCNFNutrientNames.html"), false);
-  assert.equal(fs.existsSync(path.join(site, "DataCNFFood.html")), false);
-  assert.equal(fs.existsSync(path.join(site, "DataCNFNutrientNames.html")), false);
+test("GridGraph retains seven implementations while exposing only time-series options", () => {
+  const graphComponent = read("GridGraph.d2f01c3.js");
+  for (const mode of ["line", "bar", "area", "scatter", "pie", "heatmap", "surface3d"]) assert.ok(graphComponent.includes(`"${mode}"`), `GridGraph retains ${mode}`);
+  assert.ok(graphComponent.includes('const TIME_SERIES_TYPES = ["line", "bar", "area", "scatter"]'));
+  assert.ok(graphComponent.includes('setAttribute("aria-label", "Start date")'));
+  assert.ok(graphComponent.includes('setAttribute("aria-label", "End date")'));
+  assert.ok(graphComponent.includes("createTimeSeriesTraces"), "GridGraph supports multiple numeric time-series traces");
+  assert.ok(graphComponent.includes("safePlotlyText(columns[index])"), "provider field names are escaped before reaching Plotly");
+  assert.ok(graphComponent.includes('this._resize = () => schedulePlotResize(this)'));
+  assert.equal(graphComponent.includes("this._resize = () => this.draw()"), false);
 });
 
 test("Azure deployment pins checkout immutably and does not persist its token", () => {

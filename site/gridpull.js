@@ -12,9 +12,9 @@
       name: "Statistics Canada",
       url: "https://www.statcan.gc.ca/",
       datasets: {
-        population: { name: "Population estimates", description: "Explore quarterly population estimates for Canada. This view follows the total population series across the latest 100 reference quarters, with counts recorded at each quarter end. Use the official table page to review its coverage, definitions, and available breakdowns.", format: "json", schema: "statcan-wds", graphableFields: ["Value"], request: { productId: 17100009, coordinate: "1.0.0.0.0.0.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1710000901", fetchURL: STATCAN_WDS_URL, verified: true },
-        labour: { name: "Labour force characteristics", description: "Explore monthly employment for people aged 15 and over in Canada. This view uses the total-gender seasonally adjusted series and shows the latest 100 reference months. The graph converts Statistics Canada's reported thousands into people using the table's scalar factor. The official table also offers other measures and groups; consult its definitions before comparing them.", format: "json", schema: "statcan-wds", graphableFields: ["Value"], request: { productId: 14100287, coordinate: "1.3.1.1.1.1.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701", fetchURL: STATCAN_WDS_URL, verified: true },
-        prices: { name: "Consumer Price Index", description: "Explore Canada's monthly Consumer Price Index for all items across the latest 100 reference months. The index follows price change for a representative basket of consumer goods and services. Review the official table for geography, product coverage, and index-period details before comparing series.", format: "json", schema: "statcan-wds", graphableFields: ["Value"], request: { productId: 18100004, coordinate: "2.2.0.0.0.0.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000401", fetchURL: STATCAN_WDS_URL, verified: true }
+        population: { name: "Population estimates", description: "Explore quarterly population estimates for Canada. This view follows the total population series across the latest 100 reference quarters, with counts recorded at each quarter end. Use the official table page to review its coverage, definitions, and available breakdowns.", format: "json", schema: "statcan-wds", timeSeries: { field: "Reference period", filters: [] }, graphableFields: ["Value"], request: { productId: 17100009, coordinate: "1.0.0.0.0.0.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1710000901", fetchURL: STATCAN_WDS_URL, verified: true },
+        labour: { name: "Labour force characteristics", description: "Explore monthly employment for people aged 15 and over in Canada. This view uses the total-gender seasonally adjusted series and shows the latest 100 reference months. The graph converts Statistics Canada's reported thousands into people using the table's scalar factor. The official table also offers other measures and groups; consult its definitions before comparing them.", format: "json", schema: "statcan-wds", timeSeries: { field: "Reference period", filters: [] }, graphableFields: ["Value"], request: { productId: 14100287, coordinate: "1.3.1.1.1.1.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701", fetchURL: STATCAN_WDS_URL, verified: true },
+        prices: { name: "Consumer Price Index", description: "Explore Canada's monthly Consumer Price Index for all items across the latest 100 reference months. The index follows price change for a representative basket of consumer goods and services. Review the official table for geography, product coverage, and index-period details before comparing series.", format: "json", schema: "statcan-wds", timeSeries: { field: "Reference period", filters: [] }, graphableFields: ["Value"], request: { productId: 18100004, coordinate: "2.2.0.0.0.0.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000401", fetchURL: STATCAN_WDS_URL, verified: true }
       }
     },
     healthcanada: {
@@ -33,7 +33,7 @@
       url: "https://www.donneesquebec.ca/",
       datasets: {
         municipalities: { name: "Québec municipal population and area", description: "Compare population and land area for Québec municipalities, with regional and MRC context. The source register is updated continuously, while its population figures are based on provincial decrees using estimates from the Institut de la statistique du Québec. The chart request asks only for municipality, population, area, region, and MRC fields; contact details are not requested.", format: "json", schema: "ckan-datastore", graphableFields: ["mpopul", "msuperf"], request: { resourceId: "19385b4e-5503-4330-9e59-f998f5918363", limit: 100, fields: ["munnom", "mpopul", "msuperf", "regadm", "mrc"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/repertoire-des-municipalites-du-quebec", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true },
-        population: { name: "Québec population estimates and projections", description: "Explore comparable population estimates and projections for Québec health and social service territories from 2001 to 2051. Records are organized by territory, year, data type, and sex, with total population available in the TousLesAges field. The source describes the series as supporting both retrospective and forward-looking analysis; interpret projected values according to the official methodology.", format: "json", schema: "ckan-datastore", graphableFields: ["TousLesAges"], request: { resourceId: "05c3c53d-db97-4bc3-8221-d8af47b4b93e", limit: 100, fields: ["NiveauGeographique", "Territoire", "Annee", "TypeDonnees", "Sexe", "TousLesAges"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/estimations-et-projections-de-population-comparables", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true },
+        population: { name: "Québec population estimates and projections", description: "Explore comparable population estimates and projections for Québec health and social service territories from 2001 to 2051. Records are organized by territory, year, data type, and sex, with total population available in the TousLesAges field. The source describes the series as supporting both retrospective and forward-looking analysis; interpret projected values according to the official methodology.", format: "json", schema: "ckan-datastore", timeSeries: { field: "Annee", filters: ["NiveauGeographique", "Territoire", "TypeDonnees", "Sexe"] }, graphableFields: ["TousLesAges"], request: { resourceId: "05c3c53d-db97-4bc3-8221-d8af47b4b93e", limit: 100, fields: ["NiveauGeographique", "Territoire", "Annee", "TypeDonnees", "Sexe", "TousLesAges"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/estimations-et-projections-de-population-comparables", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true },
         finances: { name: "Québec municipal financial profile, 2025 data", description: "Browse municipal population counts in the 2025 Quebec municipal financial profile. Opaque financial code fields remain in the source table and are excluded from chart measures until their meanings are mapped.", format: "json", schema: "ckan-datastore", graphableFields: ["population"], request: { resourceId: "15192f34-a635-47f5-aaf9-eb1621d65b2e", limit: 100, fields: ["nom_organisme", "population", "desc_cp", "FIALX01959", "FIALX01960", "FIALX01961", "FIALX01962", "FIALX01963", "FIALX01977", "FIALX02005", "FIALX02006", "FIALX02007", "FIALX02008", "FIALX02009", "FIALX02010", "FIALX02011", "FIALX02097"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true }
       }
     },
@@ -49,13 +49,16 @@
     }
   };
 
+  function isTimeSeriesDataset(dataset) {
+    return Boolean(dataset?.timeSeries && typeof dataset.timeSeries.field === "string" && Array.isArray(dataset.timeSeries.filters) && Array.isArray(dataset.graphableFields) && dataset.graphableFields.length > 0);
+  }
   function listSites() {
-    return Object.keys(registry).filter((id) => !registry[id].hidden).map((id) => ({ id, name: registry[id].name, url: registry[id].url }));
+    return Object.keys(registry).filter((id) => !registry[id].hidden && Object.values(registry[id].datasets).some(isTimeSeriesDataset)).map((id) => ({ id, name: registry[id].name, url: registry[id].url }));
   }
   function listDatasets(siteId) {
     const site = registry[siteId];
     if (!site) throw new Error("Unknown data provider.");
-    return Object.keys(site.datasets).map((id) => ({ id, ...site.datasets[id] })).filter((dataset) => Array.isArray(dataset.graphableFields) && dataset.graphableFields.length > 0);
+    return Object.keys(site.datasets).map((id) => ({ id, ...site.datasets[id] })).filter(isTimeSeriesDataset);
   }
   function getInfo(siteId, datasetId) {
     const site = registry[siteId];
@@ -163,6 +166,34 @@
       return false;
     });
   }
+  function isValidTimePeriod(value) {
+    const text = String(value ?? "").trim();
+    if (/^\d{4}$/.test(text)) return true;
+    const match = text.match(/^(\d{4})-(\d{2})(?:-(\d{2}))?$/);
+    if (!match) return false;
+    const year = Number(match[1]), month = Number(match[2]), day = Number(match[3] || 1);
+    if (month < 1 || month > 12 || day < 1 || day > 31) return false;
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+  }
+  function isTimeSeriesTable(table, timeField, graphableFields, filterFields = []) {
+    if (!table || !Array.isArray(table.columns) || !Array.isArray(table.rows) || !Array.isArray(graphableFields) || !graphableFields.length || !Array.isArray(filterFields)) return false;
+    const allowed = new Set([timeField, ...filterFields, ...graphableFields]);
+    if (!timeField || table.columns.indexOf(timeField) < 0 || table.columns.length !== allowed.size || table.columns.some((column) => !allowed.has(column))) return false;
+    const timeIndex = table.columns.indexOf(timeField);
+    const measureIndexes = graphableFields.map((field) => table.columns.indexOf(field));
+    if (measureIndexes.some((index) => index < 0)) return false;
+    if (!table.rows.length || table.rows.some((row) => !Array.isArray(row) || row.length !== table.columns.length || !isValidTimePeriod(row[timeIndex]))) return false;
+    return measureIndexes.every((index) => table.rows.some((row) => {
+      const raw = row[index];
+      if (raw === null || raw === undefined || String(raw).trim() === "") return false;
+      const value = typeof raw === "number" ? raw : Number(String(raw).replace(/[,$%\s]/g, ""));
+      return Number.isFinite(value);
+    }) && table.rows.every((row) => {
+      const raw = row[index];
+      return raw === null || raw === undefined || String(raw).trim() === "" || Number.isFinite(typeof raw === "number" ? raw : Number(String(raw).replace(/[,$%\s]/g, "")));
+    }));
+  }
   async function readBounded(response) {
     if (!response.body || typeof response.body.getReader !== "function") throw new Error("This browser cannot safely stream the dataset response.");
     const reader = response.body.getReader();
@@ -180,6 +211,7 @@
   async function load(siteId, datasetId, options = {}) {
     const info = getInfo(siteId, datasetId);
     if (!info.dataset.verified || !info.dataset.fetchURL) throw new Error("The dataset's direct public endpoint has not been verified yet.");
+    if (!isTimeSeriesDataset(info.dataset)) throw new Error("This dataset is disabled. Only reviewed time-series datasets can be graphed.");
     if (!Array.isArray(info.dataset.graphableFields) || !info.dataset.graphableFields.length) throw new Error("This dataset contains labels or reference fields but no approved numeric measure for graphing.");
     const url = new URL(info.dataset.fetchURL);
     if (url.protocol !== "https:") throw new Error("Only HTTPS data sources are supported.");
@@ -232,7 +264,7 @@
         if (table.rows.some((row) => !unitMap.get(String(row[amountIdIndex] ?? "")))) throw new Error("Health Canada did not provide a unit for every nutrient measurement.");
         table = { columns: [...table.columns, info.dataset.unitField], rows: table.rows.map((row) => [...row, unitMap.get(String(row[amountIdIndex]))]) };
       }
-      if (!isGraphableTable(table, info.dataset.graphableFields)) throw new Error("The source did not return a numeric observation in an approved graph measure. This dataset was not displayed.");
+      if (!isTimeSeriesTable(table, info.dataset.timeSeries.field, info.dataset.graphableFields, info.dataset.timeSeries.filters)) throw new Error("The source did not return the reviewed time axis and numeric graph measures. This dataset was not displayed.");
       return { ...table, source: info.site, dataset: info.dataset };
     } catch (error) {
       if (controller.signal.aborted && controller.signal.reason instanceof Error) throw controller.signal.reason;
@@ -243,5 +275,5 @@
       options.signal?.removeEventListener("abort", cancel);
     }
   }
-  root.Gridpull = Object.freeze({ listSites, listDatasets, getInfo, load, parseCSV, normalizeJSON, normalizeStatCanWDS, normalizeCKANDatastore, isGraphableTable });
+  root.Gridpull = Object.freeze({ listSites, listDatasets, getInfo, load, parseCSV, normalizeJSON, normalizeStatCanWDS, normalizeCKANDatastore, isGraphableTable, isTimeSeriesTable });
 })(typeof window === "undefined" ? globalThis : window);

@@ -57,47 +57,50 @@ test("JSON normalizer enforces row and column limits", () => {
   assert.equal(Gridpull.normalizeJSON([[...Array(101).keys()] ]).columns.length, 100);
 });
 
-test("selected registry exposes three reviewed sites and three datasets per site", () => {
-  const sites = Gridpull.listSites();
-  assert.equal(sites.length, 3);
-  const verifiedCNF = {
-    gouda: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json",
-    salmon: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=3049&lang=en&type=json",
-    apple: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=1696&lang=en&type=json"
-  };
-  const verifiedStatCan = {
+test("public registry exposes only reviewed time-series datasets", () => {
+  assert.deepEqual(Gridpull.listSites().map((site) => site.id), ["statcan", "quebec"]);
+  assert.deepEqual(Gridpull.listDatasets("statcan").map((dataset) => dataset.id), ["population", "labour", "prices"]);
+  assert.deepEqual(Gridpull.listDatasets("quebec").map((dataset) => dataset.id), ["population"]);
+  const statcanSeries = {
     population: { productId: 17100009, coordinate: "1.0.0.0.0.0.0.0.0.0", latestN: 100 },
     labour: { productId: 14100287, coordinate: "1.3.1.1.1.1.0.0.0.0", latestN: 100 },
     prices: { productId: 18100004, coordinate: "2.2.0.0.0.0.0.0.0.0", latestN: 100 }
   };
-  const verifiedQuebec = {
-    municipalities: { resourceId: "19385b4e-5503-4330-9e59-f998f5918363", limit: 100, fields: ["munnom", "mpopul", "msuperf", "regadm", "mrc"] },
-    population: { resourceId: "05c3c53d-db97-4bc3-8221-d8af47b4b93e", limit: 100, fields: ["NiveauGeographique", "Territoire", "Annee", "TypeDonnees", "Sexe", "TousLesAges"] },
-    finances: { resourceId: "15192f34-a635-47f5-aaf9-eb1621d65b2e", limit: 100, fields: ["nom_organisme", "population", "desc_cp", "FIALX01959", "FIALX01960", "FIALX01961", "FIALX01962", "FIALX01963", "FIALX01977", "FIALX02005", "FIALX02006", "FIALX02007", "FIALX02008", "FIALX02009", "FIALX02010", "FIALX02011", "FIALX02097"] }
-  };
-  for (const site of sites) {
-    const datasets = Gridpull.listDatasets(site.id);
-    assert.equal(datasets.length, 3);
-    for (const dataset of datasets) {
-      const expectedURL = site.id === "healthcanada" ? verifiedCNF[dataset.id] : site.id === "statcan" && verifiedStatCan[dataset.id] ? "https://www150.statcan.gc.ca/t1/wds/rest/getDataFromCubePidCoordAndLatestNPeriods" : site.id === "quebec" ? "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search" : null;
-      assert.equal(dataset.verified, Boolean(expectedURL), `${site.id}/${dataset.id} verification state matches source evidence`);
-      assert.equal(dataset.fetchURL, expectedURL, `${site.id}/${dataset.id} uses only its verified official endpoint`);
-      assert.ok(dataset.graphableFields.length > 0, `${site.id}/${dataset.id} has an approved graph measure`);
-      if (site.id === "statcan") assert.deepEqual(dataset.request, verifiedStatCan[dataset.id], `${dataset.id} uses the verified observation series`);
-      if (site.id === "quebec") assert.deepEqual(dataset.request, verifiedQuebec[dataset.id], `${dataset.id} uses the reviewed resource and bounded field selection`);
+  const statcan = Gridpull.listDatasets("statcan");
+  for (const [id, request] of Object.entries(statcanSeries)) {
+    const dataset = statcan.find((entry) => entry.id === id);
+    assert.ok(dataset, `Statistics Canada ${id} remains an active time series`);
+    assert.equal(dataset.fetchURL, "https://www150.statcan.gc.ca/t1/wds/rest/getDataFromCubePidCoordAndLatestNPeriods", `${id} uses the reviewed Statistics Canada endpoint`);
+    assert.deepEqual(dataset.request, request, `${id} keeps its reviewed product, coordinate, and 100-observation request`);
+  }
+  for (const site of Gridpull.listSites()) {
+    for (const dataset of Gridpull.listDatasets(site.id)) {
+      assert.ok(dataset.timeSeries?.field, `${site.id}/${dataset.id} declares its time axis`);
+      assert.ok(dataset.graphableFields.length > 0, `${site.id}/${dataset.id} declares numeric graph measures`);
     }
   }
   assert.equal(Gridpull.getInfo("healthcanada", "gouda").dataset.name, "Nutrient amounts in Gouda cheese");
-  assert.deepEqual(Gridpull.listDatasets("healthcanada").map((dataset) => dataset.id), ["gouda", "salmon", "apple"]);
-  assert.deepEqual(Gridpull.getInfo("healthcanada", "foods").dataset.graphableFields, []);
   assert.throws(() => Gridpull.getInfo("unknown", "dataset"), /Unknown data provider/);
 });
 
-test("graphability requires an approved measure with a numeric observation", () => {
+test("time-series validation requires a time axis and numeric measures while allowing declared filters", () => {
+  const single = { columns: ["period", "value"], rows: [["2025", "4"], ["2026", "5"]] };
+  const multi = { columns: ["period", "actual", "forecast"], rows: [["2025", "4", ""], ["2026", "5", "6"]] };
+  const grouped = { columns: ["territory", "year", "value"], rows: [["North", "2025", "4"], ["North", "2026", "5"]] };
+  assert.equal(Gridpull.isTimeSeriesTable(single, "period", ["value"]), true);
+  assert.equal(Gridpull.isTimeSeriesTable(multi, "period", ["actual", "forecast"]), true);
+  assert.equal(Gridpull.isTimeSeriesTable(grouped, "year", ["value"], ["territory"]), true);
+  assert.equal(Gridpull.isTimeSeriesTable({ columns: ["category", "value"], rows: [["North", "4"], ["South", "5"]] }, "period", ["value"]), false);
+  assert.equal(Gridpull.isTimeSeriesTable({ columns: ["period", "value", "label"], rows: [["2025", "4", "x"]] }, "period", ["value"]), false);
+  assert.equal(Gridpull.isTimeSeriesTable({ columns: ["period", "value"], rows: [["2025", "4"], ["2026", "not numeric"]] }, "period", ["value"]), false);
+  assert.equal(Gridpull.isTimeSeriesTable({ columns: ["period", "value"], rows: [["not a date", "4"]] }, "period", ["value"]), false);
+  assert.equal(Gridpull.isTimeSeriesTable({ columns: ["period", "value"], rows: [["2026-13", "4"]] }, "period", ["value"]), false);
+  assert.equal(Gridpull.isTimeSeriesTable({ columns: ["period", "value"], rows: [["2025-02-30", "4"]] }, "period", ["value"]), false);
+});
+
+test("generic graphability still requires an approved numeric observation", () => {
   assert.equal(Gridpull.isGraphableTable({ columns: ["food_code", "food_description"], rows: [["109", "Gouda"], ["110", "Cheddar"]] }, []), false);
-  assert.equal(Gridpull.isGraphableTable({ columns: ["nutrient_code", "nutrient_decimals"], rows: [["1", "2"], ["2", "1"]] }, ["nutrient_value"]), false);
   assert.equal(Gridpull.isGraphableTable({ columns: ["nutrient_value"], rows: [["label"]] }, ["nutrient_value"]), false);
-  assert.equal(Gridpull.isGraphableTable({ columns: ["nutrient_value"], rows: [["12.5"]] }, ["nutrient_value"]), true);
   assert.equal(Gridpull.isGraphableTable({ columns: ["nutrient_value"], rows: [["12.5"], ["14.3"]] }, ["nutrient_value"]), true);
 });
 
@@ -116,57 +119,27 @@ test("unverified dataset cannot make a network request", async () => {
   await assert.rejects(Gridpull.load("toronto", "indicators", { fetch: () => { throw new Error("network should not be reached"); } }), /not been verified/);
 });
 
-test("label-only food dataset is rejected before a provider request", async () => {
-  await assert.rejects(Gridpull.load("healthcanada", "foods", { fetch: () => { throw new Error("network should not be reached"); } }), /no approved numeric measure/);
+test("cross-sectional datasets are disabled before any provider request", async () => {
+  let requests = 0;
+  const fetch = () => { requests++; throw new Error("network should not be reached"); };
+  await assert.rejects(Gridpull.load("healthcanada", "gouda", { fetch }), /disabled.*time-series/i);
+  await assert.rejects(Gridpull.load("quebec", "municipalities", { fetch }), /disabled.*time-series/i);
+  await assert.rejects(Gridpull.load("quebec", "finances", { fetch }), /disabled.*time-series/i);
+  await assert.rejects(Gridpull.load("healthcanada", "foods", { fetch }), /disabled.*time-series/i);
+  assert.equal(requests, 0);
 });
 
-test("CNF nutrient amounts join official unit definitions for comparable graphing", async () => {
-  const requests = [];
-  const amountRows = [
-    { nutrient_name_id: 203, nutrient_value: 24.94, nutrient_web_name: "Protein" },
-    { nutrient_name_id: 208, nutrient_value: 357, nutrient_web_name: "Energy (kcal)" }
-  ];
-  const unitRows = [
-    { nutrient_name_id: 203, unit: "g" },
-    { nutrient_name_id: 208, unit: "kcal" }
-  ];
-  const fetch = async (url) => {
-    requests.push(url);
-    const body = JSON.stringify(url.includes("nutrientname") ? unitRows : amountRows);
-    return {
-      ok: true,
-      headers: { get: (name) => name.toLowerCase() === "content-type" ? "application/json; charset=utf-8" : null },
-      body: new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(body)); controller.close(); } })
-    };
+test("malformed time-series observations are rejected after normalization", async () => {
+  const body = JSON.stringify([{ status: "SUCCESS", object: {
+    productId: 18100004, coordinate: "2.2.0.0.0.0.0.0.0.0",
+    vectorDataPoint: [{ refPer: "2026-10-01", value: "not-a-number", scalarFactorCode: 0 }]
+  } }]);
+  const response = {
+    ok: true, status: 200,
+    headers: { get: (name) => name.toLowerCase() === "content-type" ? "application/json" : null },
+    body: new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(body)); controller.close(); } })
   };
-  const table = await Gridpull.load("healthcanada", "gouda", { fetch });
-  assert.equal(requests.length, 2);
-  assert.ok(requests[1].includes("nutrientname"));
-  assert.equal(table.columns.at(-1), "unit");
-  assert.deepEqual(table.rows.map((row) => row.at(-1)), ["g", "kcal"]);
-  assert.equal(Gridpull.isGraphableTable(table, ["nutrient_value"]), true);
-});
-
-test("replacement CNF profiles use specific official foods and remain numeric graph datasets", async () => {
-  for (const [datasetId, foodId, name] of [["salmon", "3049", "wild Atlantic salmon"], ["apple", "1696", "raw apple with skin"]]) {
-    const requests = [];
-    const amountRows = [
-      { food_code: Number(foodId), nutrient_name_id: 203, nutrient_value: 24.9, nutrient_web_name: "Protein" },
-      { food_code: Number(foodId), nutrient_name_id: 208, nutrient_value: 357, nutrient_web_name: "Energy" }
-    ];
-    const unitRows = [{ nutrient_name_id: 203, unit: "g" }, { nutrient_name_id: 208, unit: "kCal" }];
-    const fetch = async (url) => {
-      requests.push(url);
-      const body = JSON.stringify(url.includes("nutrientname") ? unitRows : amountRows);
-      return { ok: true, headers: { get: () => "application/json" }, body: new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(body)); controller.close(); } }) };
-    };
-    const table = await Gridpull.load("healthcanada", datasetId, { fetch });
-    assert.equal(requests.length, 2);
-    assert.ok(requests[0].includes(`id=${foodId}`));
-    assert.equal(table.dataset.name.toLowerCase().includes(name.toLowerCase()), true);
-    assert.equal(Gridpull.isGraphableTable(table, table.dataset.graphableFields), true);
-    assert.deepEqual(table.rows.map((row) => row.at(-1)), ["g", "kCal"]);
-  }
+  await assert.rejects(Gridpull.load("statcan", "prices", { fetch: async () => response }), /invalid numeric value/);
 });
 
 test("verified Statistics Canada dataset uses anonymous WDS POST and normalizes observations", async () => {
@@ -192,24 +165,26 @@ test("verified Statistics Canada dataset uses anonymous WDS POST and normalizes 
   assert.deepEqual(table.rows, [["2026-10-01", "170.4"]]);
 });
 
-test("verified Données Québec source makes a bounded anonymous GET and keeps only requested fields", async () => {
+test("verified Données Québec projection source makes a bounded GET and enforces time-series shape", async () => {
   let request;
-  const body = JSON.stringify({ success: true, result: { resource_id: "19385b4e-5503-4330-9e59-f998f5918363", records: [{ munnom: "Abercorn", mpopul: "368", private_email: "excluded" }] } });
+  const body = JSON.stringify({ success: true, result: { resource_id: "05c3c53d-db97-4bc3-8221-d8af47b4b93e", records: [
+    { NiveauGeographique: "Territory", Territoire: "North", Annee: "2025", TypeDonnees: "Estimate", Sexe: "Both", TousLesAges: "120" },
+    { NiveauGeographique: "Territory", Territoire: "North", Annee: "2026", TypeDonnees: "Projection", Sexe: "Both", TousLesAges: "124" }
+  ] } });
   const response = {
-    ok: true,
-    status: 200,
+    ok: true, status: 200,
     headers: { get: (name) => name.toLowerCase() === "content-type" ? "application/json; charset=utf-8" : null },
     body: new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(body)); controller.close(); } })
   };
-  const table = await Gridpull.load("quebec", "municipalities", { fetch: async (url, options) => { request = { url, options }; return response; } });
+  const table = await Gridpull.load("quebec", "population", { fetch: async (url, options) => { request = { url, options }; return response; } });
   const parsed = new URL(request.url);
   assert.equal(parsed.origin, "https://www.donneesquebec.ca");
-  assert.equal(parsed.searchParams.get("resource_id"), "19385b4e-5503-4330-9e59-f998f5918363");
+  assert.equal(parsed.searchParams.get("resource_id"), "05c3c53d-db97-4bc3-8221-d8af47b4b93e");
   assert.equal(parsed.searchParams.get("limit"), "100");
-  assert.equal(parsed.searchParams.get("fields"), "munnom,mpopul,msuperf,regadm,mrc");
+  assert.equal(parsed.searchParams.get("fields"), "NiveauGeographique,Territoire,Annee,TypeDonnees,Sexe,TousLesAges");
   assert.equal(request.options.mode, "cors");
   assert.equal(request.options.credentials, "omit");
   assert.equal(request.options.method, undefined);
-  assert.deepEqual(table.columns, ["munnom", "mpopul", "msuperf", "regadm", "mrc"]);
-  assert.deepEqual(table.rows, [["Abercorn", "368", "", "", ""]]);
+  assert.deepEqual(table.columns, ["NiveauGeographique", "Territoire", "Annee", "TypeDonnees", "Sexe", "TousLesAges"]);
+  assert.equal(Gridpull.isTimeSeriesTable(table, "Annee", ["TousLesAges"], ["NiveauGeographique", "Territoire", "TypeDonnees", "Sexe"]), true);
 });
