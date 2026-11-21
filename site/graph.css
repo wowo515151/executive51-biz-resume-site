@@ -23,3 +23,8 @@ grid-graph { display: block; width: 100%; max-width: 100%; min-width: 0; overflo
 .graph-ad-panel { min-height: 110px; text-align: center; color: var(--muted); }
 .graph-ad-panel h2 { font-size: 15px; color: var(--muted); }
 @media (max-width: 520px) { .graph-hero { padding-block: 50px 38px; } .graph-toolbar { gap: 10px 16px; } .graph-panel, .graph-ad-panel { padding: 16px; } }
+.graph-ad-panel { margin-top: 22px; padding: 0; border: 0; background: transparent; box-shadow: none; text-align: left; }
+.graph-ad-panel .site-ad { min-height: 110px; text-align: left; }
+.graph-ad-panel .site-ad h2 { font-size: 14px; }
+.graph-ad-panel .site-ad h3 { font-size: 22px; }
+@media (max-width: 520px) { .graph-ad-panel .site-ad { padding: 16px; } }

@@ -3,10 +3,59 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const vm = require("node:vm");
 const site = path.resolve(__dirname, "..", "site");
 const read = (name) => fs.readFileSync(path.join(site, name), "utf8");
 require("../site/gridpull.js");
 const activePages = ["DataPopulationEstimates.html", "DataLabourForce.html", "DataConsumerPrices.html", "DataQuebecPopulationProjections.html"];
+
+test("every shipped HTML page uses the single shared accessible ad component", () => {
+  const pages = fs.readdirSync(site).filter((name) => name.endsWith(".html"));
+  const component = read("site-ad.js");
+  assert.equal(pages.length, 11, "the active site has the expected public HTML pages");
+  for (const name of pages) {
+    const html = read(name);
+    assert.equal((html.match(/<site-ad\b/g) || []).length, 1, `${name} has exactly one ad slot`);
+    assert.equal((html.match(/site-ad\.js/g) || []).length, 1, `${name} loads the shared ad source once`);
+    assert.ok(html.indexOf("<site-ad") < html.indexOf("<footer"), `${name} places the ad before its footer`);
+    if (/^Data/.test(name)) assert.match(html, /<site-ad class="graph-ad-panel"><\/site-ad>/, `${name} keeps the existing graph ad placement`);
+    else assert.match(html, /<site-ad class="site-ad-slot"><\/site-ad>/, `${name} places its ad at the bottom of main`);
+  }
+  assert.match(component, /Cost effective agent operation for coding, web pages, research\. Agents can also run apps so any form of computer work\./, "the centralized copy matches the requested message");
+  assert.match(component, /aria-labelledby/);
+  assert.match(component, /createElement\("aside"\)/, "the rendered ad is a semantic complementary region");
+  assert.match(component, /AD_COPY/);
+});
+
+test("shared ad component renders its centralized values into an accessible DOM", () => {
+  class ElementStub {
+    constructor(tagName) { this.tagName = tagName; this.children = []; this.attributes = {}; }
+    append(...children) { this.children.push(...children); }
+    setAttribute(name, value) { this.attributes[name] = value; }
+  }
+  class HTMLElementStub extends ElementStub {
+    constructor() { super("site-ad"); this.dataset = {}; }
+  }
+  const registry = new Map();
+  const context = {
+    HTMLElement: HTMLElementStub,
+    document: { createElement: (tagName) => new ElementStub(tagName) },
+    customElements: { define: (name, constructor) => registry.set(name, constructor), get: (name) => registry.get(name) }
+  };
+  vm.runInNewContext(read("site-ad.js"), context);
+  const slot = new (registry.get("site-ad"))();
+  slot.connectedCallback();
+
+  const [aside] = slot.children;
+  assert.equal(aside.tagName, "aside");
+  assert.equal(aside.attributes["aria-labelledby"], "site-ad-label");
+  const [label, heading, description] = aside.children;
+  assert.equal(label.textContent, "Advertisement");
+  assert.equal(label.id, aside.attributes["aria-labelledby"]);
+  assert.equal(heading.children[0].textContent, "Executive51");
+  assert.equal(heading.children[0].href, "index.html");
+  assert.equal(description.textContent, "Cost effective agent operation for coding, web pages, research. Agents can also run apps so any form of computer work.");
+});
 
 test("graph directory links only providers with reviewed time-series datasets", () => {
   const graph = read("graph.html");
