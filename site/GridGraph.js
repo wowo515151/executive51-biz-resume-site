@@ -10,6 +10,37 @@
   };
   const MEASURE_HINT = /(^|[_\s-])(id|code|order|rank|sequence|index|decimal|precision|count|source)([_\s-]|$)|(^|[_\s-])(standard[_\s-]?error|error)([_\s-]|$)/i;
 
+  function create3DTrace(rows, columns, indexes, labels) {
+    if (rows.length >= 2 && indexes.length >= 2) {
+      return {
+        fallback: false,
+        trace: {
+          type: "surface", x: labels, y: indexes.map((index) => columns[index]),
+          z: indexes.map((index) => rows.map((row) => numeric(row[index]))),
+          connectgaps: false, colorscale: "Viridis",
+          hovertemplate: "%{x}<br>%{y}<br>%{z}<extra></extra>"
+        }
+      };
+    }
+    const x = [], y = [], z = [], customdata = [];
+    indexes.forEach((columnIndex, seriesIndex) => rows.forEach((row, rowIndex) => {
+      const value = numeric(row[columnIndex]);
+      if (value === null) return;
+      x.push(rowIndex + 1);
+      y.push(seriesIndex + 1);
+      z.push(value);
+      customdata.push([labels[rowIndex], columns[columnIndex]]);
+    }));
+    return {
+      fallback: true,
+      trace: {
+        type: "scatter3d", mode: "markers", name: "Available data", x, y, z, customdata,
+        marker: { size: 4, opacity: 0.8 },
+        hovertemplate: "%{customdata[0]}<br>%{customdata[1]}: %{z}<extra></extra>"
+      }
+    };
+  }
+
   class GridGraph extends HTMLElement {
     constructor() {
       super();
@@ -92,6 +123,7 @@
       this._fieldNote.textContent = numericIndexes.length > 100
         ? "Choose up to 100 numeric fields. Identifier-like columns are left unselected by default."
         : "Identifier, code, order, and precision fields are left unselected by default; choose any field when it is meaningful for your view.";
+      this._defaultFieldNote = this._fieldNote.textContent;
     }
     message(text, isError = false) {
       if (root.Plotly) root.Plotly.purge(this._plot);
@@ -105,6 +137,7 @@
       if (!root.Plotly || typeof root.Plotly.react !== "function") { this.message("The graphing library did not load. Check your connection and reload this page.", true); return; }
       const indexes = [...(this._seriesOptions?.querySelectorAll("input:checked") || [])].map((input) => columns.indexOf(input.value)).filter((index) => index >= 0);
       if (!indexes.length) { this.message("This table has no numeric measure selected. Choose one or more fields above, or use the table preview for this lookup dataset."); return; }
+      this._fieldNote.textContent = this._defaultFieldNote || "";
       const xIndex = Math.max(0, columns.indexOf(this._xSelect?.value));
       const labels = rows.map((row, index) => String(row[xIndex] ?? index + 1).slice(0, 100));
       const averageLabelLength = labels.reduce((sum, label) => sum + label.length, 0) / labels.length;
@@ -113,12 +146,15 @@
       if (this.type === "pie") {
         const index = indexes[0];
         traces.push({ type: "pie", labels, values: rows.map((row) => Math.max(0, numeric(row[index]) ?? 0)), hole: 0.25, textinfo: labels.length > 20 ? "none" : "label+percent", hovertemplate: "%{label}<br>%{value}<extra></extra>" });
-      } else if (this.type === "heatmap" || this.type === "surface3d") {
+      } else if (this.type === "heatmap") {
         const x = labels;
         const y = indexes.map((index) => columns[index]);
         const z = indexes.map((index) => rows.map((row) => numeric(row[index])));
-        if (this.type === "heatmap") traces.push({ type: "heatmap", x, y, z, colorscale: "Blues", hoverongaps: false });
-        else traces.push({ type: "surface", x, y, z, connectgaps: false, colorscale: "Viridis", hovertemplate: "%{x}<br>%{y}<br>%{z}<extra></extra>" });
+        traces.push({ type: "heatmap", x, y, z, colorscale: "Blues", hoverongaps: false });
+      } else if (this.type === "surface3d") {
+        const result = create3DTrace(rows, columns, indexes, labels);
+        traces.push(result.trace);
+        if (result.fallback) this._fieldNote.textContent = "A 3D surface needs at least two selected numeric measures and two rows. Showing the available values as labeled 3D points.";
       } else if (this.type === "scatter") {
         const xValues = rows.map((row, index) => row[xIndex] ?? index + 1);
         indexes.forEach((index) => traces.push({ type: "scatter", mode: "markers", name: columns[index], x: xValues, y: rows.map((row) => numeric(row[index])) }));
@@ -133,11 +169,13 @@
       }
       const is3d = this.type === "surface3d";
       const labelMargin = horizontalBars ? Math.min(300, Math.max(140, Math.ceil(Math.max(...labels.map((label) => label.length)) * 6))) : 58;
-      const layout = { autosize: true, height: horizontalBars ? Math.min(2200, Math.max(620, rows.length * 18)) : 420, margin: { l: labelMargin, r: 24, t: 28, b: horizontalBars ? 60 : 90 }, paper_bgcolor: "#fff", plot_bgcolor: "#fff", font: { color: "#172b49" }, legend: { orientation: "h", y: -0.24 }, xaxis: { automargin: true, title: horizontalBars ? columns[indexes[0]] : undefined, tickangle: labels.length > 12 && !horizontalBars ? -45 : 0 }, yaxis: { automargin: true, title: horizontalBars ? columns[xIndex] : undefined }, ...(is3d ? { scene: { xaxis: { title: columns[xIndex] }, yaxis: { title: "Series" }, zaxis: { title: "Value" } } } : {}), ...(this.type === "bar" ? { barmode: "group" } : {}) };
+      const surfaceFallback = this.type === "surface3d" && (rows.length < 2 || indexes.length < 2);
+      const layout = { autosize: true, height: horizontalBars ? Math.min(2200, Math.max(620, rows.length * 18)) : 420, margin: { l: labelMargin, r: 24, t: 28, b: horizontalBars ? 60 : 90 }, paper_bgcolor: "#fff", plot_bgcolor: "#fff", font: { color: "#172b49" }, legend: { orientation: "h", y: -0.24 }, xaxis: { automargin: true, title: horizontalBars ? columns[indexes[0]] : undefined, tickangle: labels.length > 12 && !horizontalBars ? -45 : 0 }, yaxis: { automargin: true, title: horizontalBars ? columns[xIndex] : undefined }, ...(is3d ? { scene: { xaxis: { title: surfaceFallback ? "Row" : columns[xIndex] }, yaxis: { title: surfaceFallback ? "Numeric series" : "Series" }, zaxis: { title: "Value" } } } : {}), ...(this.type === "bar" ? { barmode: "group" } : {}) };
       this._plot.querySelector(".note")?.remove();
       this._plot.setAttribute("aria-label", `${this.type} graph for ${rows.length} table rows using ${indexes.length} numeric field${indexes.length === 1 ? "" : "s"}`);
       root.Plotly.react(this._plot, traces, layout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ["sendDataToCloud"] });
     }
   }
   if (!customElements.get("grid-graph")) customElements.define("grid-graph", GridGraph);
+  if (typeof module !== "undefined" && module.exports) module.exports = { create3DTrace };
 })(window);
