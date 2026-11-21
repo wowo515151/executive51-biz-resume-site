@@ -43,7 +43,7 @@ test("nine graphable DataPages use shared panels and the homepage links only to 
   }
   assert.ok(read("SiteHealthCanada.html").includes("https://open.canada.ca/data/en/dataset/1b6139bd-ed7e-4043-bc28-ff00e10f3109"), "Health Canada SitePage links the official CNF record");
   assert.ok(read("DataCNFNutrientAmounts.html").includes("https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&amp;type=json"), "nutrient graph links the official unit definitions it joins");
-  const graphComponent = read("GridGraph.c254e31.js");
+  const graphComponent = read("GridGraph.e87870a.js");
   assert.ok(graphComponent.includes("graphableNumericIndexes"), "the graph component admits only explicitly approved numeric measures");
   assert.ok(graphComponent.includes('getAttribute("data-graphable-y")'), "the measure whitelist is set per dataset");
   for (const mode of ["bar", "line", "area", "scatter", "pie", "heatmap", "surface3d"]) assert.ok(graphComponent.includes(`"${mode}"`), `GridGraph exposes ${mode}`);
@@ -56,6 +56,14 @@ test("nine graphable DataPages use shared panels and the homepage links only to 
   assert.ok(read("DataPopulationEstimates.html").includes('data-default-type="line"'), "time-series graphs default to Line");
   assert.match(read("DataPopulationEstimates.html"), /data-time-series="true"[^>]*data-graph-types="line,bar,area,scatter"/, "time-series charts expose sequential chart types only");
   assert.match(read("DataQuebecMunicipalPopulation.html"), /data-graph-types="bar"/, "municipality categories expose categorical bar charts only");
+  const projectionPage = read("DataQuebecPopulationProjections.html");
+  assert.match(projectionPage, /data-required-filters="Territoire,TypeDonnees,Sexe"/, "population projections require one territory, data type, and sex");
+  assert.match(projectionPage, /data-sort-x="Annee"/, "the selected projection series is sorted by year before charting");
+  assert.match(projectionPage, /data-default-type="line"[^>]*data-graph-types="line,bar,area,scatter"/, "the grouped projection series offers ordered sequential chart types");
+  for (const page of ["DataQuebecPopulationProjections.html", "DataQuebecMunicipalPopulation.html", "DataQuebecMunicipalFinance.html"]) {
+    const html = read(page);
+    assert.match(html, /partial view, and source ordering is not a ranking or representative sample/i, `${page} discloses the sampled rows and source ordering`);
+  }
   assert.ok(graphComponent.includes("categories may not be continuous and measures may not share units"), "3D surfaces explain categorical and unit interpretation limits");
   assert.ok(graphComponent.includes("Dense x-axis labels are sampled and shortened; hover for full category names"), "dense 3D axes disclose shortened labels and full hover names");
   assert.ok(graphComponent.includes("Area mode stacks selected measures cumulatively"), "stacked area charts disclose cumulative behavior and unit limits");
@@ -66,7 +74,7 @@ test("nine graphable DataPages use shared panels and the homepage links only to 
 });
 
 test("GridGraph exposes accessible field selectors and avoids defaulting to identifier-like measures", () => {
-  const graphComponent = read("GridGraph.c254e31.js");
+  const graphComponent = read("GridGraph.e87870a.js");
   assert.ok(graphComponent.includes('aria-label", "Category or X axis"'), "the category axis selector has an accessible label");
   assert.ok(graphComponent.includes('className = "series"'), "numeric series choices are grouped accessibly");
   assert.ok(graphComponent.includes("const MEASURE_HINT"), "identifier-like numeric columns are not selected by default");
