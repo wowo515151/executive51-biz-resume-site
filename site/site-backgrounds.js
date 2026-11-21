@@ -74,8 +74,12 @@
     layer.className = "site-background";
     layer.setAttribute("aria-hidden", "true");
     document.body.prepend(layer);
-    const canvas = document.createElement("canvas");
-    canvas.id = "effect-canvas";
+    const makeCanvas = () => {
+      const effectCanvas = document.createElement("canvas");
+      effectCanvas.id = "effect-canvas";
+      return effectCanvas;
+    };
+    let canvas = makeCanvas();
     layer.append(canvas);
 
     let stored = null;
@@ -111,8 +115,11 @@
     const stop = () => {
       try { active?.destroy(); } catch (_) {}
       active = null;
-      layer.replaceChildren(canvas);
-      canvas.width = canvas.width;
+      // Canvas rendering contexts cannot change type. Give the next effect a
+      // fresh canvas so WebGL, WebGL2, and Canvas2D can follow one another.
+      layer.replaceChildren();
+      canvas = makeCanvas();
+      layer.append(canvas);
     };
     const syncMotion = () => {
       if (!active) return;
