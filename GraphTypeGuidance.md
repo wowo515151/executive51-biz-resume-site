@@ -2,14 +2,14 @@
 
 Warren directed that the active graph upgrade focus exclusively on time series. Every included page must plot a real date/month/quarter/year axis chronologically. One or multiple numeric measures may be plotted only when explicitly approved and semantically understood; any additional graphable measure column must be numeric. Other fields may identify time, label series, or filter to a coherent series, but may not be treated as measures. Work/Spec.html remains authoritative and unchanged.
 
-Verified local working-tree state (2026-11-21): at HEAD 726b3b4, uncommitted changes implement a two-provider, four-page directory (three Statistics Canada series and Québec population estimates/projections), explicit time-axis and numeric-measure validation, and disablement of the five cross-sectional pages and their loader routes. GridGraph.47fe12a.js is the new asset. Synthetic tests exercise one and multiple numeric series; 38/38 tests and syntax/diff checks pass. No real multi-series page, third provider, complete 3×3 dataset set, or live verification is established. These changes are not committed or deployed.
+Verified local working-tree state (2026-11-21): at HEAD d85e194, the integration candidate has four time-series pages (three Statistics Canada series and Québec population estimates/projections), explicit time-axis and numeric-measure validation, and five withheld cross-sectional pages and loader routes. The current local patch removes 3D chart support from the active component and page declarations; the versioned asset is `GridGraph.6bf43e7.js`. Offline tests pass 57/57, with JavaScript syntax, diff whitespace, and asset-hash checks passing. No real multi-series page, third provider, complete 3×3 dataset set, or live verification is established. The patch is uncommitted and has not been deployed.
 
 | Series shape | Suitable options | Conditions |
 | --- | --- | --- |
 | One numeric measure over time | Line (default), Bar, Scatter, conditional Area | Keep time on X. Bar is suitable for discrete periods; Area needs a clear temporal/cumulative meaning. |
 | Multiple numeric series over time | Line, grouped Bar, Scatter, conditional Area | Require comparable units, scales, definitions, and time coverage. Stacked Area only when totals are meaningful. |
 | Time-by-series matrix | Conditional Heatmap | Require interpretable time and series dimensions plus comparable or properly normalized values. |
-| Any time series | Pie or 3D | Not defaults; need a separately documented time-series interpretation and suitable numeric axes. |
+| Any time series | Pie | Not a default; needs a separately documented time-series interpretation and additive measures. |
 
 Never combine incompatible units on one scale. A graph control must show only options approved for its verified time-series shape. A category chart without a temporal axis is out of scope.
 
@@ -41,7 +41,6 @@ This document defines which graph types are suitable for the current data and wh
 | Scatter | Showing the relationship between paired numeric observations, or points against a genuinely ordered time axis. Explain the two dimensions. | The horizontal axis is only a list of unrelated category labels. |
 | Pie | Showing parts of one meaningful whole with a small number of non-negative categories and one consistent measure. | There are many categories, negative values, incompatible units, or no defensible whole. |
 | Heatmap | Showing a matrix with meaningful row and column dimensions and comparable values encoded by color. | There is only one arbitrary list of categories, or the values use incompatible units without normalization. |
-| 3D surface | Showing a continuous or ordered X/Y grid with at least two comparable numeric dimensions and enough observations to form a surface. The axes and units must be explained. | X consists of unordered locations or names, data are sparse, or measures have incompatible units. A labeled point fallback is not a substitute for an interpretable surface. |
 
 ## Current dataset choices
 
@@ -59,7 +58,7 @@ This document defines which graph types are suitable for the current data and wh
 
 The CNF food-label and nutrient-definition tables are not graph datasets: their numeric-looking codes or order fields identify records rather than measure quantities. They are removed from the graph directory and cannot be loaded through the graph loader. The replacement nutrient profiles use named food records with numeric nutrient amounts; the official source calls them part of the 2015 CNF publication and says it will not update that publication.
 
-The earlier cross-sectional chart options remain unavailable on current pages. The time-series addendum below defines separate calendar heatmap and 3D time-map options for regular observations; these modes do not reuse the cross-sectional heatmap or 3D surface encodings.
+The earlier cross-sectional chart options remain unavailable on current pages. The time-series addendum below defines the calendar heatmap for regular observations. Three-dimensional chart modes are not part of the current graph component.
 
 ## Current time-series chart choices
 
@@ -72,7 +71,6 @@ This addendum applies to the local time-series-only graph pages and does not ame
 | Area | Fills beneath one series; it does not stack other measures. Multiple measures require explicit declarations that they are comparable and additive. |
 | Scatter | Shows each value at its time period without connecting adjacent observations. |
 | Heatmap | Places observed values in a calendar matrix: year by month, year by quarter, or year by annual period. It requires at least three unique regular periods over two or more years. Missing calendar cells stay blank; values are not aggregated or estimated. |
-| 3D time map | For regular monthly or quarterly series only, uses calendar year, observed month/quarter, and the single measure value. It uses markers for actual observations and does not interpolate a surface or invent a measure axis. Annual data has one temporal dimension, so this option is omitted there. |
 | Pie | Not offered on current pages. It is permitted only for one measure explicitly declared as nonnegative additive totals over disjoint periods, with 2–20 complete unique periods. Population counts, employment levels, and price indexes are not additive across time. |
 
-Current Statistics Canada population, labour, and consumer-price pages offer line, bar, area, scatter, heatmap, and 3D time map. Québec population estimates and projections offer line, bar, area, scatter, and annual heatmap; the annual series has no separate seasonal dimension for a 3D view. No page declares additive period totals, comparable multi-measure series, or stackable measures, so pie and multi-measure comparison/stacking remain unavailable.
+Current Statistics Canada population, labour, and consumer-price pages offer line, bar, area, scatter, and heatmap. Québec population estimates and projections offer the same five options, with annual heatmap cells. The component supports pie only for explicitly declared additive period totals; no current page makes that declaration. No page declares comparable or stackable multi-measure series, so pie and multi-measure comparison/stacking remain unavailable.

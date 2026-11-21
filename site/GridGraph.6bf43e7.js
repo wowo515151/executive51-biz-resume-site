@@ -1,7 +1,7 @@
 /* Accessible selector and data adapter for Plotly.js. */
 (function (root) {
   "use strict";
-  const TYPES = ["line", "bar", "area", "scatter", "pie", "heatmap", "scatter3d"];
+  const TYPES = ["line", "bar", "area", "scatter", "pie", "heatmap"];
   const TIME_SERIES_TYPES = TYPES;
   const periodDate = (value) => {
     const text = String(value ?? "").trim();
@@ -163,33 +163,6 @@
     };
   }
 
-  function createTemporal3DTrace(rows, columns, timeField, measureField) {
-    const timeIndex = columns.indexOf(timeField), valueIndex = columns.indexOf(measureField);
-    if (timeIndex < 0 || valueIndex < 0) return null;
-    const classification = classifyTimeSeries(rows, timeIndex);
-    if (!classification || classification.granularity === "year") return null;
-    const x = [], y = [], z = [], customdata = [];
-    for (const period of classification.periods) {
-      const row = rows.find((candidate) => String(candidate[timeIndex] ?? "").trim() === period.raw);
-      const value = row ? numeric(row[valueIndex]) : null;
-      if (value === null) continue;
-      x.push(period.year);
-      y.push(classification.granularity === "quarter" ? Math.floor((period.month - 1) / 3) + 1 : period.month);
-      z.push(value);
-      customdata.push(safePlotlyText(period.raw));
-    }
-    if (z.length < 3) return null;
-    const quarter = classification.granularity === "quarter";
-    return {
-      trace: {
-        type: "scatter3d", mode: "markers", x, y, z, customdata,
-        marker: { size: 4, opacity: 0.85 },
-        hovertemplate: "%{customdata}<br>%{z}<extra></extra>"
-      },
-      axisTitles: { x: "Calendar year", y: quarter ? "Calendar quarter" : "Calendar month", z: safePlotlyText(measureField) }
-    };
-  }
-
   // Dataset attributes must be set only after source semantics establish these properties.
   function timeSeriesTypeReasons(rows, columns, timeField, measureFields, comparableFields = [], stackableFields = [], pieAdditivePeriodTotals = false) {
     const reasons = Object.fromEntries(TIME_SERIES_TYPES.map((type) => [type, null]));
@@ -225,10 +198,6 @@
     }
     if (measureFields.length !== 1) reasons.heatmap = "The temporal heatmap shows one numeric measure at a time.";
     else if (!classifyTimeSeries(rows, timeIndex)) reasons.heatmap = "Heatmap needs at least three unique, regular annual, quarterly, or monthly periods spanning two or more years.";
-    const temporal3D = classifyTimeSeries(rows, timeIndex);
-    if (!temporal3D || temporal3D.granularity === "year" || measureFields.length !== 1 || rows.filter((row) => numeric(row[values[0]]) !== null).length < 3) {
-      reasons.scatter3d = "3D time map needs at least three monthly or quarterly observations across two or more years; annual data has only one temporal dimension.";
-    }
     return reasons;
   }
 
@@ -246,50 +215,6 @@
       if (numericA !== null && numericB !== null) return numericA - numericB;
       return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
     });
-  }
-
-  function create3DTrace(rows, columns, indexes, labels) {
-    const safeColumns = columns.map(safePlotlyText);
-    const safeLabels = labels.map(safePlotlyText);
-    if (rows.length >= 2 && indexes.length >= 2) {
-      const tickCount = Math.min(6, safeLabels.length);
-      const xTickValues = Array.from({ length: tickCount }, (_value, tickIndex) =>
-        Math.round(tickIndex * (safeLabels.length - 1) / (tickCount - 1))
-      );
-      return {
-        fallback: false,
-        xTickValues,
-        xTickText: xTickValues.map((rowIndex) => {
-          const label = String(labels[rowIndex] ?? "");
-          const characters = Array.from(label);
-          return safePlotlyText(characters.length > 8 ? `${characters.slice(0, 7).join("")}…` : label);
-        }),
-        trace: {
-          type: "surface", x: safeLabels.map((_label, rowIndex) => rowIndex), y: indexes.map((index) => safeColumns[index]),
-          z: indexes.map((index) => rows.map((row) => numeric(row[index]))),
-          customdata: indexes.map(() => safeLabels.slice()),
-          connectgaps: false, colorscale: "Viridis",
-          hovertemplate: "%{customdata}<br>%{y}: %{z}<extra></extra>"
-        }
-      };
-    }
-    const x = [], y = [], z = [], customdata = [];
-    indexes.forEach((columnIndex, seriesIndex) => rows.forEach((row, rowIndex) => {
-      const value = numeric(row[columnIndex]);
-      if (value === null) return;
-      x.push(rowIndex + 1);
-      y.push(seriesIndex + 1);
-      z.push(value);
-      customdata.push([safeLabels[rowIndex], safeColumns[columnIndex]]);
-    }));
-    return {
-      fallback: true,
-      trace: {
-        type: "scatter3d", mode: "markers", name: "Available data", x, y, z, customdata,
-        marker: { size: 4, opacity: 0.8 },
-        hovertemplate: "%{customdata[0]}<br>%{customdata[1]}: %{z}<extra></extra>"
-      }
-    };
   }
 
   function createPieTrace(rows, index, labels) {
@@ -378,7 +303,7 @@
       this._typeControls = controls;
       supportedTypes.forEach((type) => {
         const b = document.createElement("button"); b.type = "button";
-        b.textContent = type === "scatter3d" ? "3D time map" : type[0].toUpperCase() + type.slice(1);
+        b.textContent = type[0].toUpperCase() + type.slice(1);
         b.setAttribute("aria-pressed", String(this.type === type));
         b.disabled = true;
         b.addEventListener("click", () => { if (b.disabled) return; this.type = type; controls.querySelectorAll("button").forEach((other) => other.setAttribute("aria-pressed", String(other === b))); this.draw(); });
@@ -430,7 +355,7 @@
         button.hidden = Boolean(reason);
         button.disabled = Boolean(reason);
         button.title = reason || "Available for the selected dataset and time range.";
-        button.setAttribute("aria-label", reason ? `${type === "scatter3d" ? "3D time map" : type} unavailable: ${reason}` : `${type === "scatter3d" ? "3D time map" : type} chart`);
+        button.setAttribute("aria-label", reason ? `${type} unavailable: ${reason}` : `${type} chart`);
         if (!reason) availableTypes.push(type);
       }
       if (reasons[this.type] && availableTypes.length) this.type = availableTypes[0];
@@ -593,7 +518,6 @@
       const xIndex = timeIndex;
       const labels = rows.map((row) => safePlotlyText(periodDate(row[xIndex]) || String(row[xIndex] ?? "").slice(0, 100)));
       const horizontalBars = this.type === "bar" && shouldUseHorizontalBars(labels);
-      const is3d = this.type === "scatter3d";
       const traces = [];
       if (this.type === "pie") {
         const index = indexes[0];
@@ -614,12 +538,6 @@
         if (!trace) { this.message("The selected periods do not form a regular temporal heatmap.", true); return; }
         traces.push(trace);
         this.setModeNote("Each cell is one observed period, arranged by calendar year and month or quarter (or by year for annual data). Color encodes this single measure; missing cells are left blank and no values are aggregated or estimated.");
-      } else if (this.type === "scatter3d") {
-        const trace = createTemporal3DTrace(rows, columns, timeField, columns[indexes[0]]);
-        if (!trace) { this.message("A 3D time map requires regular monthly or quarterly observations with at least three numeric values.", true); return; }
-        traces.push(trace.trace);
-        this._3dAxisTitles = trace.axisTitles;
-        this.setModeNote("The 3D time map uses calendar year, the observed month or quarter, and this measure's value. Each marker is an actual observation; no values or series are interpolated.");
       } else if (this.type === "scatter") {
         this.setModeNote(indexes.length > 1
           ? "Selected measures are dataset-declared comparable and share one value scale. Points remain separate observations at their time periods."
@@ -649,7 +567,7 @@
       const selectedUnit = this._unitSelect?.value;
       const valueAxisTitle = safePlotlyText(`${measureTitle}${selectedUnit ? ` (${selectedUnit})` : ""}`);
       const heatmap = this.type === "heatmap";
-      const layout = { autosize: true, height: heatmap ? Math.max(260, Math.min(540, traces[0].y.length * 28 + 120)) : horizontalBars ? Math.min(2200, Math.max(620, rows.length * 18)) : 420, margin: { l: labelMargin, r: 24, t: 28, b: horizontalBars ? 60 : 90 }, paper_bgcolor: "#fff", plot_bgcolor: "#fff", font: { color: "#172b49" }, legend: { orientation: "h", y: -0.24 }, xaxis: { ...(heatmap ? { type: "category" } : { type: "date" }), automargin: true, title: heatmap ? "Calendar year" : safePlotlyText(timeField), tickangle: labels.length > 12 && !horizontalBars ? -45 : 0 }, yaxis: { automargin: true, title: heatmap ? "Calendar period" : valueAxisTitle }, ...(is3d ? { scene: { xaxis: { title: this._3dAxisTitles.x }, yaxis: { title: this._3dAxisTitles.y }, zaxis: { title: this._3dAxisTitles.z } } } : {}), ...(this.type === "bar" ? { barmode: "group" } : {}) };
+      const layout = { autosize: true, height: heatmap ? Math.max(260, Math.min(540, traces[0].y.length * 28 + 120)) : horizontalBars ? Math.min(2200, Math.max(620, rows.length * 18)) : 420, margin: { l: labelMargin, r: 24, t: 28, b: horizontalBars ? 60 : 90 }, paper_bgcolor: "#fff", plot_bgcolor: "#fff", font: { color: "#172b49" }, legend: { orientation: "h", y: -0.24 }, xaxis: { ...(heatmap ? { type: "category" } : { type: "date" }), automargin: true, title: heatmap ? "Calendar year" : safePlotlyText(timeField), tickangle: labels.length > 12 && !horizontalBars ? -45 : 0 }, yaxis: { automargin: true, title: heatmap ? "Calendar period" : valueAxisTitle }, ...(this.type === "bar" ? { barmode: "group" } : {}) };
       this._plot.querySelector(".note")?.remove();
       this._plot.style.height = `${layout.height}px`;
       this._plot.setAttribute("aria-label", `${this.type} graph for ${rows.length} table rows using ${indexes.length} numeric field${indexes.length === 1 ? "" : "s"}`);
@@ -658,5 +576,5 @@
     }
   }
   if (!customElements.get("grid-graph")) customElements.define("grid-graph", GridGraph);
-  if (typeof module !== "undefined" && module.exports) module.exports = { GridGraph, create3DTrace, createTemporal3DTrace, createPieTrace, createTimeSeriesTraces, createTemporalHeatmapTrace, classifyTimeSeries, timeSeriesTypeReasons, shouldUseHorizontalBars, defaultMeasureNames, graphableNumericIndexes, filterRowsByFields, filterRowsByTimePeriod, hasUniqueTimePeriods, hasRequiredFilters, sortRowsByField, safePlotlyText, schedulePlotResize, cancelPlotResize, periodDate };
+  if (typeof module !== "undefined" && module.exports) module.exports = { GridGraph, createPieTrace, createTimeSeriesTraces, createTemporalHeatmapTrace, classifyTimeSeries, timeSeriesTypeReasons, shouldUseHorizontalBars, defaultMeasureNames, graphableNumericIndexes, filterRowsByFields, filterRowsByTimePeriod, hasUniqueTimePeriods, hasRequiredFilters, sortRowsByField, safePlotlyText, schedulePlotResize, cancelPlotResize, periodDate };
 })(window);

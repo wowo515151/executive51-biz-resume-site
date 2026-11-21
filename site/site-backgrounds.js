@@ -2,7 +2,6 @@
 (() => {
   const choices = [
     ["particle-constellation", "Particle constellation"],
-    ["crystal", "Crystal artwork"],
     ["fluid-ink", "Fluid ink"],
     ["vanta-net", "Vanta Net"],
     ["vanta-waves", "Vanta Waves"],
@@ -72,7 +71,7 @@
 
     let stored = null;
     try { stored = localStorage.getItem("executive51-background"); } catch (_) {}
-    // Keep a visitor's saved selection, including Crystal from the earlier picker.
+    // Unsupported saved values, including the retired Crystal choice, use the current default.
     let selected = stored && isChoice(stored) ? stored : defaultChoice;
     const persist = value => { try { localStorage.setItem("executive51-background", value); } catch (_) {} };
     if (selected !== stored) persist(selected);
@@ -137,7 +136,7 @@
       if (save) persist(value);
       document.body.dataset.background = value;
       stop();
-      if (value === "none" || value === "crystal" || reducedMotion.matches) {
+      if (value === "none" || reducedMotion.matches) {
         changing = false;
         syncPicker();
         return;

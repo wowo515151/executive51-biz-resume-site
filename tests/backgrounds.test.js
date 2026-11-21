@@ -74,11 +74,12 @@ test("particle constellation is the shared default on every device profile", () 
   }
 });
 
-test("saved Crystal choice and artwork survive the default update", () => {
+test("saved Crystal choice falls back to the shared default while the artwork remains available", () => {
   const {document, selects, saved} = bootBackground({stored: "crystal"});
-  assert.equal(document.body.dataset.background, "crystal");
-  assert.equal(selects[0].value, "crystal");
-  assert.equal(saved.value, "crystal");
+  assert.equal(document.body.dataset.background, "particle-constellation");
+  assert.equal(selects[0].value, "particle-constellation");
+  assert.equal(saved.value, "particle-constellation");
+  assert.equal(selects[0].children.some(option => option.value === "crystal" || option.textContent === "Crystal artwork"), false);
   const css = fs.readFileSync(path.join(site, "site.css"), "utf8");
   assert.match(css, /body\[data-background="crystal"\][^{]*\{[^}]*background-image: url\("assets\/large2\.png"\)/);
 });
@@ -88,7 +89,7 @@ test("the shared picker includes every pack effect and local dependency", () => 
   assert.ok(block, "choice list is present");
   const labels = [...block.matchAll(/\["([^"]+)", "([^"]+)"\]/g)].map(match => [match[1], match[2]]);
   assert.deepEqual(labels, [
-    ["particle-constellation", "Particle constellation"], ["crystal", "Crystal artwork"],
+    ["particle-constellation", "Particle constellation"],
     ["fluid-ink", "Fluid ink"],
     ["vanta-net", "Vanta Net"], ["vanta-waves", "Vanta Waves"], ["vanta-globe", "Vanta Globe"],
     ["vanta-dots", "Vanta Dots"], ["vanta-rings", "Vanta Rings"], ["vanta-halo", "Vanta Halo"],
@@ -102,7 +103,7 @@ test("the shared picker includes every pack effect and local dependency", () => 
     "canvas-nest.js", "fss.js", "shader-runtime.js", "star-nest.js", "procedural-ocean.js", "topologica.js"
   ]) assert.ok(fs.existsSync(path.join(site, "backgrounds", asset)), `missing ${asset}`);
   assert.match(manager, /canvas = makeCanvas\(\)/, "each effect transition receives a fresh canvas");
-  assert.match(manager, /value === "crystal" \|\| reducedMotion\.matches/, "Crystal remains selectable without starting an effect engine");
+  assert.doesNotMatch(manager, /\["crystal",\s*"Crystal artwork"\]/, "Crystal is absent from shared dropdown choices");
 });
 
 test("all site HTML stays on the shared navigation and stylesheet", () => {

@@ -81,9 +81,7 @@ test("all public graph pages declare a time axis and numeric measures", () => {
     const html = read(name);
     for (const marker of ["data-site=", "data-dataset=", "data-dataset-description", "grid-graph data-time-series=\"true\"", "data-time-field=", "graph-ad-panel", "data-load-dataset", "<footer"]) assert.ok(html.includes(marker), `${name} includes ${marker}`);
     assert.match(html, /data-graphable-y="[A-Za-z0-9_,]+"/);
-    const expectedTypes = name === "DataQuebecPopulationProjections.html"
-      ? "line,bar,area,scatter,heatmap"
-      : "line,bar,area,scatter,heatmap,scatter3d";
+    const expectedTypes = "line,bar,area,scatter,heatmap";
     assert.ok(html.includes(`data-graph-types="${expectedTypes}"`), `${name} exposes only chart choices supported by its time cadence`);
     assert.match(html, /data-default-type="line"/, `${name} defaults to a line chart`);
     assert.match(html, /GridGraph\.[a-f0-9]{7}\.js/, `${name} uses the revised versioned graph component`);
@@ -107,7 +105,7 @@ test("all public graph pages declare a time axis and numeric measures", () => {
 test("withheld cross-sectional and unverified pages and loader routes are absent", () => {
   const graphData = read("graph-data.js");
   const loader = read("gridpull.js");
-  const component = read("GridGraph.c389cb0.js");
+  const component = read("GridGraph.6bf43e7.js");
   assert.ok(graphData.includes("This page is disabled because its dataset does not meet the reviewed time-series requirements."));
   assert.ok(loader.includes("Only reviewed time-series datasets can be graphed"));
   assert.ok(loader.includes("isTimeSeriesTable(table"));
@@ -123,14 +121,13 @@ test("withheld cross-sectional and unverified pages and loader routes are absent
 });
 
 test("GridGraph exposes only suitable time-series modes and documents safe dimensional encodings", () => {
-  const graphComponent = read("GridGraph.c389cb0.js");
-  for (const mode of ["line", "bar", "area", "scatter", "pie", "heatmap", "scatter3d"]) assert.ok(graphComponent.includes(`"${mode}"`), `GridGraph supports ${mode} when declared`);
+  const graphComponent = read("GridGraph.6bf43e7.js");
+  for (const mode of ["line", "bar", "area", "scatter", "pie", "heatmap"]) assert.ok(graphComponent.includes(`"${mode}"`), `GridGraph supports ${mode} when declared`);
+  assert.doesNotMatch(graphComponent, /scatter3d|createTemporal3DTrace|create3DTrace/);
   assert.ok(graphComponent.includes("const TIME_SERIES_TYPES = TYPES"));
   assert.ok(graphComponent.includes('data-pie-additive-period-totals'), "pie requires explicit additive period-total semantics");
   assert.ok(graphComponent.includes('data-comparable-y') && graphComponent.includes('data-stackable-y'), "multi-measure comparisons and stacking require dataset declarations");
   assert.ok(graphComponent.includes("createTemporalHeatmapTrace"), "heatmap maps only observed regular calendar periods");
-  assert.ok(graphComponent.includes("createTemporal3DTrace"), "3D calendar scatter uses actual temporal dimensions");
-  assert.ok(graphComponent.includes("no values or series are interpolated"));
   assert.ok(graphComponent.includes('setAttribute("aria-label", "Start date")'));
   assert.ok(graphComponent.includes('setAttribute("aria-label", "End date")'));
   assert.ok(graphComponent.includes('this._plot.setAttribute("role", "region")'), "interactive chart contents remain exposed to assistive technology");
