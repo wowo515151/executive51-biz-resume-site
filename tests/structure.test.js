@@ -13,7 +13,7 @@ test("graph entry links reviewed provider pages, each with eligible unique data 
     assert.ok(graph.includes(`href="${provider}"`), `graph.html links ${provider}`);
     const html = read(provider);
     const links = [...html.matchAll(/href="(Data[^"]+\.html)"/g)].map((match) => match[1]);
-    const expectedLinks = provider === "SiteHealthCanada.html" ? 1 : 3;
+    const expectedLinks = 3;
     assert.equal(links.length, expectedLinks, `${provider} lists only graphable datasets`);
     assert.equal(new Set(links).size, expectedLinks, `${provider} links are unique`);
     for (const link of links) {
@@ -27,11 +27,11 @@ test("graph entry links reviewed provider pages, each with eligible unique data 
   }
 });
 
-test("seven graphable DataPages use shared panels and the homepage links only to the graph entry", () => {
+test("nine graphable DataPages use shared panels and the homepage links only to the graph entry", () => {
   const providers = ["SiteStatisticsCanada.html", "SiteHealthCanada.html", "SiteDonneesQuebec.html"];
   const pages = providers.flatMap((provider) => [...read(provider).matchAll(/href="(Data[^"]+\.html)"/g)].map((match) => match[1]));
-  assert.equal(new Set(pages).size, 7, "selected providers link seven graphable datasets");
-  assert.equal(pages.length, 7);
+  assert.equal(new Set(pages).size, 9, "selected providers link nine graphable datasets");
+  assert.equal(pages.length, 9);
   for (const name of pages) {
     const html = read(name);
     for (const marker of ["data-site=", "data-dataset=", "data-dataset-description", "grid-graph", "graph-ad-panel", "data-load-dataset", "<footer"]) {
@@ -83,7 +83,7 @@ test("GridGraph exposes accessible field selectors and avoids defaulting to iden
 
 test("all dataset pages request the current versioned GridGraph asset", () => {
   const dataPages = fs.readdirSync(site).filter((name) => /^Data.*\.html$/.test(name));
-  assert.equal(dataPages.length, 7);
+  assert.equal(dataPages.length, 9);
   for (const page of dataPages) {
     assert.match(read(page), /<script src="GridGraph\.[a-f0-9]{7}\.js" defer><\/script>/, `${page} requests a versioned chart component`);
     assert.match(read(page), /data-graphable-y="[A-Za-z0-9_,]+"/, `${page} configures approved numeric graph measures`);

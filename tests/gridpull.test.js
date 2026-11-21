@@ -60,7 +60,11 @@ test("JSON normalizer enforces row and column limits", () => {
 test("selected registry exposes three reviewed sites and three datasets per site", () => {
   const sites = Gridpull.listSites();
   assert.equal(sites.length, 3);
-  const verifiedCNF = { gouda: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json" };
+  const verifiedCNF = {
+    gouda: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json",
+    salmon: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=3049&lang=en&type=json",
+    apple: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=1696&lang=en&type=json"
+  };
   const verifiedStatCan = {
     population: { productId: 17100009, coordinate: "1.0.0.0.0.0.0.0.0.0", latestN: 100 },
     labour: { productId: 14100287, coordinate: "1.3.1.1.1.1.0.0.0.0", latestN: 100 },
@@ -73,7 +77,7 @@ test("selected registry exposes three reviewed sites and three datasets per site
   };
   for (const site of sites) {
     const datasets = Gridpull.listDatasets(site.id);
-    assert.equal(datasets.length, site.id === "healthcanada" ? 1 : 3);
+    assert.equal(datasets.length, 3);
     for (const dataset of datasets) {
       const expectedURL = site.id === "healthcanada" ? verifiedCNF[dataset.id] : site.id === "statcan" && verifiedStatCan[dataset.id] ? "https://www150.statcan.gc.ca/t1/wds/rest/getDataFromCubePidCoordAndLatestNPeriods" : site.id === "quebec" ? "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search" : null;
       assert.equal(dataset.verified, Boolean(expectedURL), `${site.id}/${dataset.id} verification state matches source evidence`);
@@ -84,7 +88,7 @@ test("selected registry exposes three reviewed sites and three datasets per site
     }
   }
   assert.equal(Gridpull.getInfo("healthcanada", "gouda").dataset.name, "Nutrient amounts in Gouda cheese");
-  assert.deepEqual(Gridpull.listDatasets("healthcanada").map((dataset) => dataset.id), ["gouda"]);
+  assert.deepEqual(Gridpull.listDatasets("healthcanada").map((dataset) => dataset.id), ["gouda", "salmon", "apple"]);
   assert.deepEqual(Gridpull.getInfo("healthcanada", "foods").dataset.graphableFields, []);
   assert.throws(() => Gridpull.getInfo("unknown", "dataset"), /Unknown data provider/);
 });
@@ -141,6 +145,28 @@ test("CNF nutrient amounts join official unit definitions for comparable graphin
   assert.equal(table.columns.at(-1), "unit");
   assert.deepEqual(table.rows.map((row) => row.at(-1)), ["g", "kcal"]);
   assert.equal(Gridpull.isGraphableTable(table, ["nutrient_value"]), true);
+});
+
+test("replacement CNF profiles use specific official foods and remain numeric graph datasets", async () => {
+  for (const [datasetId, foodId, name] of [["salmon", "3049", "wild Atlantic salmon"], ["apple", "1696", "raw apple with skin"]]) {
+    const requests = [];
+    const amountRows = [
+      { food_code: Number(foodId), nutrient_name_id: 203, nutrient_value: 24.9, nutrient_web_name: "Protein" },
+      { food_code: Number(foodId), nutrient_name_id: 208, nutrient_value: 357, nutrient_web_name: "Energy" }
+    ];
+    const unitRows = [{ nutrient_name_id: 203, unit: "g" }, { nutrient_name_id: 208, unit: "kCal" }];
+    const fetch = async (url) => {
+      requests.push(url);
+      const body = JSON.stringify(url.includes("nutrientname") ? unitRows : amountRows);
+      return { ok: true, headers: { get: () => "application/json" }, body: new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(body)); controller.close(); } }) };
+    };
+    const table = await Gridpull.load("healthcanada", datasetId, { fetch });
+    assert.equal(requests.length, 2);
+    assert.ok(requests[0].includes(`id=${foodId}`));
+    assert.equal(table.dataset.name.toLowerCase().includes(name.toLowerCase()), true);
+    assert.equal(Gridpull.isGraphableTable(table, table.dataset.graphableFields), true);
+    assert.deepEqual(table.rows.map((row) => row.at(-1)), ["g", "kCal"]);
+  }
 });
 
 test("verified Statistics Canada dataset uses anonymous WDS POST and normalizes observations", async () => {

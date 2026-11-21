@@ -29,11 +29,13 @@ This document defines which graph types are suitable for the current data and wh
 | Statistics Canada population estimates | `Value` | Line by default; line, bar, area, scatter. Full loaded date range is selected initially. |
 | Statistics Canada labour force | `Value` | Line by default; line, bar, area, scatter. Full loaded date range is selected initially. |
 | Statistics Canada consumer prices | `Value` | Line by default; line, bar, area, scatter. Full loaded date range is selected initially. |
-| Health Canada Gouda nutrient amounts | `nutrient_value` | Bar only. A unit selector starts at grams; only observations with the selected unit are plotted, the unit appears on the value axis, and the table preview keeps all units. |
+| Health Canada Gouda nutrient amounts | `nutrient_value` | Bar only. A unit selector starts at grams; only observations with the selected unit are plotted, the unit appears on the value axis, and the table preview keeps all units. This is from the 2015 CNF publication, which Health Canada says it will not update. |
+| Health Canada wild Atlantic salmon nutrient amounts | `nutrient_value` | Bar only, with the same single-unit filtering and grams default. Values describe 100 g edible portion in the legacy 2015 CNF publication. |
+| Health Canada raw apple with skin nutrient amounts | `nutrient_value` | Bar only, with the same single-unit filtering and grams default. Values describe 100 g edible portion in the legacy 2015 CNF publication. |
 | Québec municipal population and area | `mpopul`, `msuperf` | Bar only. Use one measure at a time because population and area have different units. |
 | Québec population projections | `TousLesAges` | Bar only in the current ungrouped table view. A line view requires a single selected territory, data type, and sex with rows ordered by year. |
 | Québec municipal financial profile | `population` | Bar only. Unmapped `FIALX…` fields are excluded from measures until their definitions are reviewed. |
 
-The CNF food-label and nutrient-definition tables are not graph datasets: their numeric-looking codes or order fields identify records rather than measure quantities. They are removed from the graph directory and cannot be loaded through the graph loader. They can be reconsidered only after a comparable numeric measure is selected and documented.
+The CNF food-label and nutrient-definition tables are not graph datasets: their numeric-looking codes or order fields identify records rather than measure quantities. They are removed from the graph directory and cannot be loaded through the graph loader. The replacement nutrient profiles use named food records with numeric nutrient amounts; the official source calls them part of the 2015 CNF publication and says it will not update that publication.
 
 No current dataset meets the requirements for pie, heatmap, or 3D surface, so those controls are not shown. Their implementations remain available for a future dataset that meets the requirements above.
