@@ -36,8 +36,9 @@
   const isChoice = value => choices.some(([key]) => key === value);
   const defaultForProfile = ({width, coarsePointer, cores, memory}) => {
     if (width <= 600 || (width <= 820 && coarsePointer)) return "particle-constellation";
-    if ((cores > 0 && cores <= 4) || (memory > 0 && memory <= 4)) return "particle-constellation";
-    return "fluid-ink";
+    const knownLowSignal = (cores > 0 && cores <= 4) || (memory > 0 && memory <= 4);
+    if (knownLowSignal || !(cores > 0 || memory > 0)) return "particle-constellation";
+    return cores > 4 && (memory === 0 || memory > 4) ? "fluid-ink" : "particle-constellation";
   };
   const profile = () => ({
     width: Math.min(innerWidth || 0, screen.width || innerWidth || 0),

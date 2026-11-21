@@ -33,7 +33,9 @@ test("background defaults favor phones and low-end devices", () => {
   assert.equal(defaultForProfile({width: 1440, coarsePointer: false, cores: 4, memory: 8}), "particle-constellation");
   assert.equal(defaultForProfile({width: 1440, coarsePointer: false, cores: 8, memory: 4}), "particle-constellation");
   assert.equal(defaultForProfile({width: 1440, coarsePointer: false, cores: 8, memory: 8}), "fluid-ink");
-  assert.equal(defaultForProfile({width: 1440, coarsePointer: false, cores: 0, memory: 0}), "fluid-ink");
+  assert.equal(defaultForProfile({width: 1440, coarsePointer: false, cores: 8, memory: 0}), "fluid-ink");
+  assert.equal(defaultForProfile({width: 1440, coarsePointer: false, cores: 0, memory: 8}), "particle-constellation");
+  assert.equal(defaultForProfile({width: 1440, coarsePointer: false, cores: 0, memory: 0}), "particle-constellation");
 });
 
 test("the shared picker includes every pack effect and local dependency", () => {
