@@ -93,6 +93,8 @@ test("all public graph pages declare a time axis and numeric measures", () => {
   const projection = read("DataQuebecPopulationProjections.html");
   assert.match(projection, /data-time-field="Annee"/);
   assert.match(projection, /data-required-filters="NiveauGeographique,Territoire,TypeDonnees,Sexe"/);
+  assert.match(projection, /data-chart-note="Each series is defined by geographic level, territory, data type, and sex\."/, "the persistent chart note describes all series-defining filters without implying a pending choice");
+  assert.match(projection, /This page requests up to 100 source records\. It is a partial view, and source ordering is not a ranking or representative sample\./, "the chart note change preserves the returned-sample caveat");
   assert.match(projection, /estimates for 2001–2025 and projections for 2026–2051/i, "the source description distinguishes estimates from projections");
   assert.match(read("DataPopulationEstimates.html"), /data-time-field="Reference period"/);
   assert.equal(/href="graph\.html"/.test(read("index.html")), false, "homepage does not link to the graph section before review and visual verification");
