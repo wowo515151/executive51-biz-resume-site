@@ -41,12 +41,18 @@ test("JSON normalizer enforces row and column limits", () => {
 test("selected registry exposes three reviewed sites and three datasets per site", () => {
   const sites = Gridpull.listSites();
   assert.equal(sites.length, 3);
+  const verifiedCNF = {
+    foods: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/food/?lang=en&type=json",
+    nutrients: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&type=json",
+    gouda: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json"
+  };
   for (const site of sites) {
     const datasets = Gridpull.listDatasets(site.id);
     assert.equal(datasets.length, 3);
     for (const dataset of datasets) {
-      assert.equal(dataset.verified, false, `${site.id}/${dataset.id} remains disabled pending source verification`);
-      assert.equal(dataset.fetchURL, null, `${site.id}/${dataset.id} has no active fetch URL`);
+      const expectedURL = site.id === "healthcanada" ? verifiedCNF[dataset.id] : null;
+      assert.equal(dataset.verified, Boolean(expectedURL), `${site.id}/${dataset.id} verification state matches source evidence`);
+      assert.equal(dataset.fetchURL, expectedURL, `${site.id}/${dataset.id} uses only its verified official endpoint`);
     }
   }
   assert.equal(Gridpull.getInfo("healthcanada", "gouda").dataset.name, "Nutrient amounts in Gouda cheese");
@@ -55,4 +61,21 @@ test("selected registry exposes three reviewed sites and three datasets per site
 
 test("unverified dataset cannot make a network request", async () => {
   await assert.rejects(Gridpull.load("statcan", "population", { fetch: () => { throw new Error("network should not be reached"); } }), /not been verified/);
+});
+
+test("verified Health Canada dataset loads a bounded JSON array without credentials", async () => {
+  let request;
+  const body = JSON.stringify([{ food_code: 571, food_description: "Chicken, broiler, giblets, raw" }]);
+  const response = {
+    ok: true,
+    status: 200,
+    headers: { get: (name) => name.toLowerCase() === "content-type" ? "application/json; charset=utf-8" : null },
+    body: new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(body)); controller.close(); } })
+  };
+  const table = await Gridpull.load("healthcanada", "foods", { fetch: async (url, options) => { request = { url, options }; return response; } });
+  assert.equal(request.url, "https://food-nutrition.canada.ca/api/canadian-nutrient-file/food/?lang=en&type=json");
+  assert.equal(request.options.mode, "cors");
+  assert.equal(request.options.credentials, "omit");
+  assert.deepEqual(table.columns, ["food_code", "food_description"]);
+  assert.deepEqual(table.rows, [["571", "Chicken, broiler, giblets, raw"]]);
 });
