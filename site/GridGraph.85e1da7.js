@@ -21,13 +21,18 @@
     const safeColumns = columns.map(safePlotlyText);
     const safeLabels = labels.map(safePlotlyText);
     if (rows.length >= 2 && indexes.length >= 2) {
-      const tickStep = Math.max(1, Math.ceil(safeLabels.length / 12));
-      const xTickValues = safeLabels.map((_label, rowIndex) => rowIndex)
-        .filter((rowIndex) => rowIndex % tickStep === 0 || rowIndex === safeLabels.length - 1);
+      const tickCount = Math.min(6, safeLabels.length);
+      const xTickValues = Array.from({ length: tickCount }, (_value, tickIndex) =>
+        Math.round(tickIndex * (safeLabels.length - 1) / (tickCount - 1))
+      );
       return {
         fallback: false,
         xTickValues,
-        xTickText: xTickValues.map((rowIndex) => safeLabels[rowIndex]),
+        xTickText: xTickValues.map((rowIndex) => {
+          const label = String(labels[rowIndex] ?? "");
+          const characters = Array.from(label);
+          return safePlotlyText(characters.length > 8 ? `${characters.slice(0, 7).join("")}…` : label);
+        }),
         trace: {
           type: "surface", x: safeLabels.map((_label, rowIndex) => rowIndex), y: indexes.map((index) => safeColumns[index]),
           z: indexes.map((index) => rows.map((row) => numeric(row[index]))),
@@ -236,7 +241,7 @@
         traces.push(result.trace);
         if (!result.fallback) surfaceAxisTicks = result;
         if (result.fallback) this._fieldNote.textContent = "A 3D surface needs at least two selected numeric measures and two rows. Showing the available values as labeled 3D points.";
-        else this._fieldNote.textContent = "A 3D surface connects values across row categories and selected measures; categories may not be continuous and measures may not share units.";
+        else this._fieldNote.textContent = "A 3D surface connects values across row categories and selected measures; categories may not be continuous and measures may not share units. Dense x-axis labels are sampled and shortened; hover for full category names.";
       } else if (this.type === "scatter") {
         if (indexes.length > 1) this._fieldNote.textContent = "Selected measures share one value axis; differences in units or ranges can affect comparisons.";
         const xValues = labels;
