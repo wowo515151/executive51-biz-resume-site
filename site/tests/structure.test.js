@@ -44,3 +44,11 @@ test("nine selected DataPages include the shared graph panel structure and no ho
   assert.equal(read("index.html").includes("graph.html"), false, "existing homepage remains unlinked until review");
   assert.equal(/\bgraph\.html\b/.test(read("site-nav.js")), false, "shared navigation remains free of a graph link");
 });
+
+test("GridGraph exposes accessible field selectors and avoids defaulting to identifier-like measures", () => {
+  const graphComponent = read("GridGraph.js");
+  assert.ok(graphComponent.includes('aria-label", "Category or X axis"'), "the category axis selector has an accessible label");
+  assert.ok(graphComponent.includes('className = "series"'), "numeric series choices are grouped accessibly");
+  assert.ok(graphComponent.includes("const MEASURE_HINT"), "identifier-like numeric columns are not selected by default");
+  assert.ok(read("DataCNFNutrientAmounts.html").includes('data-default-x="nutrient_web_name" data-default-y="nutrient_value"'), "nutrient chart defaults to the named nutrient value series");
+});
