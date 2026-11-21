@@ -26,7 +26,17 @@
         gouda: { name: "Nutrient amounts in Gouda cheese", description: "Review the nutrient measurements recorded for the Canadian Nutrient File's Gouda cheese example (food code 109). The API guide describes these values per 100 grams of edible portion and includes the nutrient name, value, unit context, and supporting observation fields. This reference composition is not a personalized dietary recommendation; check Health Canada's notes when comparing individual nutrient values.", format: "json", sourceUrl: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json", verified: true }
       }
     },
+    quebec: {
+      name: "Données Québec",
+      url: "https://www.donneesquebec.ca/",
+      datasets: {
+        municipalities: { name: "Québec municipal population and area", description: "Compare population and land area for Québec municipalities, with regional and MRC context. The source register is updated continuously, while its population figures are based on provincial decrees using estimates from the Institut de la statistique du Québec. The chart request asks only for municipality, population, area, region, and MRC fields; contact details are not requested.", format: "json", schema: "ckan-datastore", request: { resourceId: "19385b4e-5503-4330-9e59-f998f5918363", limit: 100, fields: ["munnom", "mpopul", "msuperf", "regadm", "mrc"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/repertoire-des-municipalites-du-quebec", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true },
+        population: { name: "Québec population estimates and projections", description: "Explore comparable population estimates and projections for Québec health and social service territories from 2001 to 2051. Records are organized by territory, year, data type, and sex, with total population available in the TousLesAges field. The source describes the series as supporting both retrospective and forward-looking analysis; interpret projected values according to the official methodology.", format: "json", schema: "ckan-datastore", request: { resourceId: "05c3c53d-db97-4bc3-8221-d8af47b4b93e", limit: 100, fields: ["NiveauGeographique", "Territoire", "Annee", "TypeDonnees", "Sexe", "TousLesAges"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/estimations-et-projections-de-population-comparables", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true },
+        finances: { name: "Québec municipal financial profile, 2025 data", description: "Browse 2025 municipal financial profile records prepared by Québec’s Ministère des Affaires municipales et de l’Habitation. The rows include municipality names, population, population class, and coded financial measures derived from property assessment summaries. The chart keeps the source’s measure codes visible so they can be checked against the ministry’s accompanying field descriptions before interpretation.", format: "json", schema: "ckan-datastore", request: { resourceId: "15192f34-a635-47f5-aaf9-eb1621d65b2e", limit: 100, fields: ["nom_organisme", "population", "desc_cp", "FIALX01959", "FIALX01960", "FIALX01961", "FIALX01962", "FIALX01963", "FIALX01977", "FIALX02005", "FIALX02006", "FIALX02007", "FIALX02008", "FIALX02009", "FIALX02010", "FIALX02011", "FIALX02097"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true }
+      }
+    },
     toronto: {
+      hidden: true,
       name: "City of Toronto Open Data",
       url: "https://open.toronto.ca/",
       datasets: {
@@ -38,7 +48,7 @@
   };
 
   function listSites() {
-    return Object.keys(registry).map((id) => ({ id, name: registry[id].name, url: registry[id].url }));
+    return Object.keys(registry).filter((id) => !registry[id].hidden).map((id) => ({ id, name: registry[id].name, url: registry[id].url }));
   }
   function listDatasets(siteId) {
     const site = registry[siteId];
@@ -124,6 +134,19 @@
     });
     return { columns: ["Reference period", "Value"], rows };
   }
+  function normalizeCKANDatastore(json, request) {
+    if (!json || json.success !== true || !json.result || json.result.resource_id !== request.resourceId || !Array.isArray(json.result.records)) {
+      throw new Error("Données Québec returned an unexpected DataStore response.");
+    }
+    if (!Number.isInteger(request.limit) || request.limit < 1 || request.limit > MAX_ROWS || json.result.records.length > request.limit) {
+      throw new Error("Données Québec returned more rows than requested.");
+    }
+    const fields = request.fields;
+    if (!Array.isArray(fields) || !fields.length || fields.length > MAX_COLUMNS || fields.some((field) => typeof field !== "string" || !/^[A-Za-z0-9_]+$/.test(field))) {
+      throw new Error("The configured DataStore fields are invalid.");
+    }
+    return { columns: fields, rows: json.result.records.map((record) => fields.map((field) => record && record[field] != null ? String(record[field]).slice(0, 20_000) : "")) };
+  }
   async function readBounded(response) {
     if (!response.body || typeof response.body.getReader !== "function") throw new Error("This browser cannot safely stream the dataset response.");
     const reader = response.body.getReader();
@@ -143,6 +166,12 @@
     if (!info.dataset.verified || !info.dataset.fetchURL) throw new Error("The dataset's direct public endpoint has not been verified yet.");
     const url = new URL(info.dataset.fetchURL);
     if (url.protocol !== "https:") throw new Error("Only HTTPS data sources are supported.");
+    if (info.dataset.schema === "ckan-datastore") {
+      const request = info.dataset.request;
+      url.searchParams.set("resource_id", request.resourceId);
+      url.searchParams.set("limit", String(request.limit));
+      url.searchParams.set("fields", request.fields.join(","));
+    }
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(new Error("Dataset request timed out.")), MAX_TIME_MS);
     const cancel = () => controller.abort(options.signal.reason);
@@ -154,7 +183,7 @@
       const requestOptions = {
         mode: "cors", credentials: "omit", signal: controller.signal,
         headers: { Accept: "text/csv, application/json" },
-        ...(info.dataset.request ? {
+        ...(info.dataset.schema === "ckan-datastore" ? {} : info.dataset.request ? {
           method: "POST",
           headers: { Accept: "application/json", "Content-Type": "application/json" },
           body: JSON.stringify([info.dataset.request])
@@ -171,7 +200,7 @@
       if (declared > MAX_BYTES) throw new Error("Dataset exceeds the 5 MB limit.");
       const text = await readBounded(response);
       const json = info.dataset.format === "json" ? JSON.parse(text) : null;
-      const table = info.dataset.format === "csv" ? parseCSV(text) : info.dataset.schema === "statcan-wds" ? normalizeStatCanWDS(json, info.dataset.request.productId) : normalizeJSON(json);
+      const table = info.dataset.format === "csv" ? parseCSV(text) : info.dataset.schema === "statcan-wds" ? normalizeStatCanWDS(json, info.dataset.request.productId) : info.dataset.schema === "ckan-datastore" ? normalizeCKANDatastore(json, info.dataset.request) : normalizeJSON(json);
       return { ...table, source: info.site, dataset: info.dataset };
     } catch (error) {
       if (controller.signal.aborted && controller.signal.reason instanceof Error) throw controller.signal.reason;
@@ -182,5 +211,5 @@
       options.signal?.removeEventListener("abort", cancel);
     }
   }
-  root.Gridpull = Object.freeze({ listSites, listDatasets, getInfo, load, parseCSV, normalizeJSON, normalizeStatCanWDS });
+  root.Gridpull = Object.freeze({ listSites, listDatasets, getInfo, load, parseCSV, normalizeJSON, normalizeStatCanWDS, normalizeCKANDatastore });
 })(typeof window === "undefined" ? globalThis : window);

@@ -64,18 +64,35 @@ test("selected registry exposes three reviewed sites and three datasets per site
     labour: { productId: 14100287, coordinate: "1.3.1.1.1.1.0.0.0.0", latestN: 100 },
     prices: { productId: 18100004, coordinate: "2.2.0.0.0.0.0.0.0.0", latestN: 100 }
   };
+  const verifiedQuebec = {
+    municipalities: { resourceId: "19385b4e-5503-4330-9e59-f998f5918363", limit: 100, fields: ["munnom", "mpopul", "msuperf", "regadm", "mrc"] },
+    population: { resourceId: "05c3c53d-db97-4bc3-8221-d8af47b4b93e", limit: 100, fields: ["NiveauGeographique", "Territoire", "Annee", "TypeDonnees", "Sexe", "TousLesAges"] },
+    finances: { resourceId: "15192f34-a635-47f5-aaf9-eb1621d65b2e", limit: 100, fields: ["nom_organisme", "population", "desc_cp", "FIALX01959", "FIALX01960", "FIALX01961", "FIALX01962", "FIALX01963", "FIALX01977", "FIALX02005", "FIALX02006", "FIALX02007", "FIALX02008", "FIALX02009", "FIALX02010", "FIALX02011", "FIALX02097"] }
+  };
   for (const site of sites) {
     const datasets = Gridpull.listDatasets(site.id);
     assert.equal(datasets.length, 3);
     for (const dataset of datasets) {
-      const expectedURL = site.id === "healthcanada" ? verifiedCNF[dataset.id] : site.id === "statcan" && verifiedStatCan[dataset.id] ? "https://www150.statcan.gc.ca/t1/wds/rest/getDataFromCubePidCoordAndLatestNPeriods" : null;
+      const expectedURL = site.id === "healthcanada" ? verifiedCNF[dataset.id] : site.id === "statcan" && verifiedStatCan[dataset.id] ? "https://www150.statcan.gc.ca/t1/wds/rest/getDataFromCubePidCoordAndLatestNPeriods" : site.id === "quebec" ? "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search" : null;
       assert.equal(dataset.verified, Boolean(expectedURL), `${site.id}/${dataset.id} verification state matches source evidence`);
       assert.equal(dataset.fetchURL, expectedURL, `${site.id}/${dataset.id} uses only its verified official endpoint`);
       if (site.id === "statcan") assert.deepEqual(dataset.request, verifiedStatCan[dataset.id], `${dataset.id} uses the verified observation series`);
+      if (site.id === "quebec") assert.deepEqual(dataset.request, verifiedQuebec[dataset.id], `${dataset.id} uses the reviewed resource and bounded field selection`);
     }
   }
   assert.equal(Gridpull.getInfo("healthcanada", "gouda").dataset.name, "Nutrient amounts in Gouda cheese");
   assert.throws(() => Gridpull.getInfo("unknown", "dataset"), /Unknown data provider/);
+});
+
+test("Données Québec DataStore normalizer validates the resource and requested columns", () => {
+  const request = { resourceId: "resource-1", limit: 100, fields: ["name", "population"] };
+  const table = Gridpull.normalizeCKANDatastore({ success: true, result: {
+    resource_id: "resource-1", records: [{ name: "Québec", population: "549459", private_email: "excluded" }]
+  } }, request);
+  assert.deepEqual(table.columns, ["name", "population"]);
+  assert.deepEqual(table.rows, [["Québec", "549459"]]);
+  assert.throws(() => Gridpull.normalizeCKANDatastore({ success: true, result: { resource_id: "other", records: [] } }, request), /unexpected DataStore/);
+  assert.throws(() => Gridpull.normalizeCKANDatastore({ success: true, result: { resource_id: "resource-1", records: Array.from({ length: 101 }, () => ({})) } }, request), /more rows than requested/);
 });
 
 test("unverified dataset cannot make a network request", async () => {
@@ -120,4 +137,26 @@ test("verified Statistics Canada dataset uses anonymous WDS POST and normalizes 
   assert.deepEqual(JSON.parse(request.options.body), [{ productId: 18100004, coordinate: "2.2.0.0.0.0.0.0.0.0", latestN: 100 }]);
   assert.deepEqual(table.columns, ["Reference period", "Value"]);
   assert.deepEqual(table.rows, [["2026-10-01", "170.4"]]);
+});
+
+test("verified Données Québec source makes a bounded anonymous GET and keeps only requested fields", async () => {
+  let request;
+  const body = JSON.stringify({ success: true, result: { resource_id: "19385b4e-5503-4330-9e59-f998f5918363", records: [{ munnom: "Abercorn", mpopul: "368", private_email: "excluded" }] } });
+  const response = {
+    ok: true,
+    status: 200,
+    headers: { get: (name) => name.toLowerCase() === "content-type" ? "application/json; charset=utf-8" : null },
+    body: new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(body)); controller.close(); } })
+  };
+  const table = await Gridpull.load("quebec", "municipalities", { fetch: async (url, options) => { request = { url, options }; return response; } });
+  const parsed = new URL(request.url);
+  assert.equal(parsed.origin, "https://www.donneesquebec.ca");
+  assert.equal(parsed.searchParams.get("resource_id"), "19385b4e-5503-4330-9e59-f998f5918363");
+  assert.equal(parsed.searchParams.get("limit"), "100");
+  assert.equal(parsed.searchParams.get("fields"), "munnom,mpopul,msuperf,regadm,mrc");
+  assert.equal(request.options.mode, "cors");
+  assert.equal(request.options.credentials, "omit");
+  assert.equal(request.options.method, undefined);
+  assert.deepEqual(table.columns, ["munnom", "mpopul", "msuperf", "regadm", "mrc"]);
+  assert.deepEqual(table.rows, [["Abercorn", "368", "", "", ""]]);
 });

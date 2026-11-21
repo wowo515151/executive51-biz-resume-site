@@ -8,7 +8,7 @@ const read = (name) => fs.readFileSync(path.join(site, name), "utf8");
 
 test("graph entry links reviewed provider pages, each with three unique data pages", () => {
   const graph = read("graph.html");
-  const providers = ["SiteStatisticsCanada.html", "SiteHealthCanada.html", "SiteTorontoOpenData.html"];
+  const providers = ["SiteStatisticsCanada.html", "SiteHealthCanada.html", "SiteDonneesQuebec.html"];
   for (const provider of providers) {
     assert.ok(graph.includes(`href="${provider}"`), `graph.html links ${provider}`);
     const html = read(provider);
@@ -27,7 +27,9 @@ test("graph entry links reviewed provider pages, each with three unique data pag
 });
 
 test("nine selected DataPages include the shared graph panel structure and no homepage link", () => {
-  const pages = fs.readdirSync(site).filter((name) => /^Data.*\.html$/.test(name));
+  const providers = ["SiteStatisticsCanada.html", "SiteHealthCanada.html", "SiteDonneesQuebec.html"];
+  const pages = providers.flatMap((provider) => [...read(provider).matchAll(/href="(Data[^"]+\.html)"/g)].map((match) => match[1]));
+  assert.equal(new Set(pages).size, 9, "selected providers link nine unique datasets");
   assert.equal(pages.length, 9);
   for (const name of pages) {
     const html = read(name);
