@@ -1,0 +1,48 @@
+VALIDATION — 14 PERMISSIVE WEB BACKGROUNDS
+Prepared November 21, 2026.
+
+PASS: All 27 JavaScript files parse with node --check. All 53 embedded HTML
+script blocks parse. All 14 effect records point to existing scripts, demos,
+and dependencies. The standalone demos contain no external script, stylesheet,
+image, or font dependencies. Bundled script SHA-256 hashes match SOURCES.json.
+
+PASS: Particle Constellation, Gradient Drift, Canvas Nest, and Polygon Surface
+executed through the actual BGPack.start wrappers with real Canvas2D drawing
+(@napi-rs/canvas) and a DOM adapter. All rendered nonempty images. Immediate
+pause, duplicate resume, resize while paused, duplicate destroy, no restart
+after destroy, and removal of window listeners were checked.
+
+PASS: Vanta's six browser bundles pass syntax and module-registration checks.
+The original visual algorithms are retained with a new shared cleanup helper.
+Three.js is pinned to the included r134 version.
+
+PASS: Star Nest, Procedural Ocean, Topologica, and Vanta Halo compiled, linked,
+and rendered using surfaceless EGL 1.5 and Mesa llvmpipe OpenGL ES 3.2 at
+320 x 180. Shader compiler/linker logs were empty; GL error was zero. The three
+standalone shaders produced different images at 0 and 8 seconds. Halo rendered
+240 feedback frames. Output images were visually inspected.
+
+PASS: Fluid's exact GLSL strings were compiled with real EGL/OpenGL ES: 20
+source strings, 28 compiled variants, 26 linked programs, all successful with
+empty logs and zero GL errors. This included both vertex shaders, every
+fragment shader, optional advection filtering, and all display keywords.
+
+PASS: Fluid JavaScript lifecycle was also checked with stubbed WebGL calls,
+including startup, idempotent controls, manual pause across tab visibility,
+framebuffer/texture counts across resize, and cleanup. That lifecycle check
+is not itself a GPU simulation test.
+
+LIMITS: This is not a completed browser integration or browser-layout test.
+The local browser could not launch because of workspace restrictions, and the
+remote browser's policy does not allow local-file preview. Cross-browser and
+hardware GPU performance were not benchmarked. Vanta's five geometry effects
+were not visually rendered end-to-end here; Fluid's full solver/framebuffer
+execution was not rendered end-to-end here. Test your selected examples in
+your target browsers and devices before deploying a webpage.
+
+The included HTML targets current browsers with Canvas 2D or WebGL support;
+the three ShaderToy-origin examples use WebGL2. Unsupported graphics paths
+show a static fallback. Demo controls support reduced motion and hidden tabs.
+
+Machine-readable logs are in provenance/*-validation.json. Relative workload
+labels in the gallery are judgments about implementation cost, not benchmarks.

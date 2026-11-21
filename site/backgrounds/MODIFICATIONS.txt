@@ -1,0 +1,45 @@
+BACKGROUND PACK — MODIFICATIONS
+Prepared 2026-11-21. Visual algorithms belong to the original authors.
+
+All visuals: local HTML wrappers; dark background presets; text panes;
+pointer-transparent rendering layer; manual pause, dimmer, reduced-motion and
+hidden-tab handling. Full license notices retained or restored in scripts.
+
+VANTA (six effects, version 0.5.24): shared cleanup helper replaced with an
+independently implemented iterative Three.js resource collector; the original
+separately sourced helper is not distributed. Removed unused commented Cells
+code from Halo; executing Halo shader body unchanged. Converted audited module
+graphs to readable browser IIFEs. Added Three.js and Ashima/Stefan notices.
+
+PARTICLES.JS: independently replaced hexToRgb and drawShape utility functions
+with uncertain separate snippet provenance. Fixed upstream cleanup. Added
+per-instance pause/resume and removal of event listeners on destruction.
+
+FLUID: original GPU solver retained. Removed promotional DOM, dat.GUI, analytics,
+keyboard shortcuts and pointer/touch capture, screenshot/download helpers, and
+external dithering image. Generates dither data in memory. Added ambient splats,
+30fps pacing, conservative resolution, lifecycle controller, explicit GPU errors,
+framebuffer cleanup, and hidden-tab handling. No external fetches remain.
+
+GRANIM: upstream browser renderer retained; full MIT license added.
+
+CANVAS NEST: original particle renderer retained. Removed bundled size-sensor
+dependency and used native ResizeObserver. Added pause/resume/destroy, corrected
+point-color syntax, and made mouse listeners removable.
+
+FLAT SURFACE SHADER: original Canvas renderer retained. Removed obsolete rAF
+polyfill. Retained the historical glMatrix Zlib notice and marked its derived
+code; retained historical Three.js MIT notice. Added a small animated-plane and
+moving-light preset in the shared background runtime.
+
+SHADERTOY SOURCES: author GLSL bodies retained; wrapped for WebGL2 with a
+full-screen triangle, iTime/iResolution/iMouse/iFrame, conservative resolution,
+frame pacing, context-restoration handling, and pause/resume/destroy controls.
+Star Nest MIT notice retained. Ocean includes BakingLab/MJP MIT notice and
+Stephen Hill credit for the ACES fit. Topologica retains author CC0 dedication.
+
+The source presets and wrappers are marked as adaptations, not represented as
+the original authors' unmodified releases. See SOURCES.json and provenance/ for
+immutable upstream revisions and precise source URLs.
+
+REPOSITORY FORMATTING: Trailing whitespace and excess blank lines at the ends of copied script and notice files were removed for repository hygiene. Bundled script SHA-256 values in SOURCES.json were refreshed for the formatted copies; shader algorithms and license text were not changed.
