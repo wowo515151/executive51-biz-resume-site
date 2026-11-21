@@ -16,8 +16,8 @@ test("3D mode uses labeled points when a surface cannot be formed", () => {
     define: (_name, definition) => { graphClass = definition; }
   };
   try {
-    delete require.cache[require.resolve("../site/GridGraph.js")];
-    require("../site/GridGraph.js");
+    delete require.cache[require.resolve("../site/GridGraph.7b45e1f.js")];
+    require("../site/GridGraph.7b45e1f.js");
   } finally {
     for (const [key, value] of Object.entries(saved)) {
       if (value === undefined) delete global[key];
@@ -26,7 +26,7 @@ test("3D mode uses labeled points when a surface cannot be formed", () => {
   }
 
   const rows = [["Vitamin C", "5"], ["Calcium", "12"], ["Sodium", ""]];
-  const result = graphClass && require("../site/GridGraph.js").create3DTrace(
+  const result = graphClass && require("../site/GridGraph.7b45e1f.js").create3DTrace(
     rows, ["nutrient_web_name", "nutrient_value"], [1], rows.map((row) => row[0])
   );
   assert.equal(result.fallback, true);
@@ -38,7 +38,7 @@ test("3D mode uses labeled points when a surface cannot be formed", () => {
 });
 
 test("3D mode uses a surface when two measures and two rows are available", () => {
-  const create3DTrace = require("../site/GridGraph.js").create3DTrace;
+  const create3DTrace = require("../site/GridGraph.7b45e1f.js").create3DTrace;
   const result = create3DTrace(
     [["North", "10", "3"], ["South", "20", "7"]],
     ["region", "population", "area"], [1, 2], ["North", "South"]
@@ -63,8 +63,8 @@ test("container resize coalesces Plotly size updates and cancels when disconnect
   global.HTMLElement = class {};
   global.customElements = { get: () => undefined, define: () => {} };
   try {
-    delete require.cache[require.resolve("../site/GridGraph.js")];
-    const { schedulePlotResize, cancelPlotResize } = require("../site/GridGraph.js");
+    delete require.cache[require.resolve("../site/GridGraph.7b45e1f.js")];
+    const { schedulePlotResize, cancelPlotResize } = require("../site/GridGraph.7b45e1f.js");
     const component = { _resizeFrame: null, _hasDrawn: true, _plot: {}, isConnected: true };
     schedulePlotResize(component);
     schedulePlotResize(component);
@@ -80,7 +80,7 @@ test("container resize coalesces Plotly size updates and cancels when disconnect
     assert.equal(frames.size, 0);
     assert.equal(resized, 1);
   } finally {
-    delete require.cache[require.resolve("../site/GridGraph.js")];
+    delete require.cache[require.resolve("../site/GridGraph.7b45e1f.js")];
     for (const [key, value] of Object.entries(saved)) {
       if (value === undefined) delete global[key];
       else global[key] = value;
