@@ -16,7 +16,7 @@
       script.onload = () => window.Plotly ? resolve(window.Plotly) : reject(new Error("The graph library did not initialize."));
       script.onerror = () => reject(new Error("Could not load the Plotly graph library."));
       document.head.append(script);
-    });
+    }).catch((error) => { plotlyPromise = null; throw error; });
     return plotlyPromise;
   }
   document.title = `${info.dataset.name} — Executive51`;
@@ -48,7 +48,9 @@
       const tbody = document.createElement("tbody");
       table.rows.slice(0, 100).forEach((row) => { const tr = document.createElement("tr"); row.forEach((value) => { const td = document.createElement("td"); td.textContent = String(value ?? ""); tr.append(td); }); tbody.append(tr); });
       tableEl.append(tbody); tableWrap.append(tableEl);
-      status.textContent = `Loaded ${table.rows.length} rows and ${table.columns.length} columns from ${table.source.name}.`;
+      const chartLimit = table.rows.length > 2000 ? " The chart plots the first 2,000 rows." : "";
+      const previewLimit = table.rows.length > 100 ? " The table preview shows the first 100 rows." : "";
+      status.textContent = `Loaded ${table.rows.length} rows and ${table.columns.length} columns from ${table.source.name}.${chartLimit}${previewLimit}`;
     } catch (error) {
       status.textContent = error instanceof Error ? error.message : "The dataset could not be loaded.";
     } finally { loadButton.disabled = false; }
