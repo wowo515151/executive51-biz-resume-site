@@ -8,6 +8,9 @@
     const n = Number(value.replace(/[,$%\s]/g, ""));
     return Number.isFinite(n) ? n : null;
   };
+  const safePlotlyText = (value) => String(value ?? "").replace(/[&<>\"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+  })[character]);
   const MEASURE_HINT = /(^|[_\s-])(id|code|order|rank|sequence|index|decimals?|precision|count|source)([_\s-]|$)|(^|[_\s-])(standard[_\s-]?error|error)([_\s-]|$)/i;
 
   function defaultMeasureNames(numericNames) {
@@ -15,11 +18,13 @@
   }
 
   function create3DTrace(rows, columns, indexes, labels) {
+    const safeColumns = columns.map(safePlotlyText);
+    const safeLabels = labels.map(safePlotlyText);
     if (rows.length >= 2 && indexes.length >= 2) {
       return {
         fallback: false,
         trace: {
-          type: "surface", x: labels, y: indexes.map((index) => columns[index]),
+          type: "surface", x: safeLabels, y: indexes.map((index) => safeColumns[index]),
           z: indexes.map((index) => rows.map((row) => numeric(row[index]))),
           connectgaps: false, colorscale: "Viridis",
           hovertemplate: "%{x}<br>%{y}<br>%{z}<extra></extra>"
@@ -33,7 +38,7 @@
       x.push(rowIndex + 1);
       y.push(seriesIndex + 1);
       z.push(value);
-      customdata.push([labels[rowIndex], columns[columnIndex]]);
+      customdata.push([safeLabels[rowIndex], safeColumns[columnIndex]]);
     }));
     return {
       fallback: true,
@@ -46,12 +51,13 @@
   }
 
   function createPieTrace(rows, index, labels) {
+    const safeLabels = labels.map(safePlotlyText);
     const rawValues = rows.map((row) => numeric(row[index]));
     if (rawValues.some((value) => value !== null && value < 0)) {
       return { trace: null, reason: "negative" };
     }
     const entries = rawValues
-      .map((value, rowIndex) => ({ label: labels[rowIndex], value }))
+      .map((value, rowIndex) => ({ label: safeLabels[rowIndex], value }))
       .filter((entry) => entry.value !== null && entry.value > 0);
     if (!entries.length) return { trace: null, reason: "empty" };
     return {
@@ -192,7 +198,7 @@
       if (!indexes.length) { this.message("This table has no numeric measure selected. Choose one or more fields above, or use the table preview for this lookup dataset."); return; }
       this._fieldNote.textContent = this._defaultFieldNote || "";
       const xIndex = Math.max(0, columns.indexOf(this._xSelect?.value));
-      const labels = rows.map((row, index) => String(row[xIndex] ?? index + 1).slice(0, 100));
+      const labels = rows.map((row, index) => safePlotlyText(String(row[xIndex] ?? index + 1).slice(0, 100)));
       const horizontalBars = this.type === "bar" && shouldUseHorizontalBars(labels);
       const traces = [];
       if (this.type === "pie") {
@@ -212,7 +218,7 @@
         this._fieldNote.textContent = pieNotes.join(" ");
       } else if (this.type === "heatmap") {
         const x = labels;
-        const y = indexes.map((index) => columns[index]);
+        const y = indexes.map((index) => safePlotlyText(columns[index]));
         const z = indexes.map((index) => rows.map((row) => numeric(row[index])));
         traces.push({ type: "heatmap", x, y, z, colorscale: "Blues", hoverongaps: false });
         if (indexes.length > 1) this._fieldNote.textContent = "Selected measures share one color scale; differences in units or ranges can affect comparisons.";
@@ -223,24 +229,24 @@
         else this._fieldNote.textContent = "A 3D surface connects values across row categories and selected measures; categories may not be continuous and measures may not share units.";
       } else if (this.type === "scatter") {
         if (indexes.length > 1) this._fieldNote.textContent = "Selected measures share one value axis; differences in units or ranges can affect comparisons.";
-        const xValues = rows.map((row, index) => row[xIndex] ?? index + 1);
-        indexes.forEach((index) => traces.push({ type: "scatter", mode: "markers", name: columns[index], x: xValues, y: rows.map((row) => numeric(row[index])) }));
+        const xValues = labels;
+        indexes.forEach((index) => traces.push({ type: "scatter", mode: "markers", name: safePlotlyText(columns[index]), x: xValues, y: rows.map((row) => numeric(row[index])) }));
       } else {
         if (indexes.length > 1) this._fieldNote.textContent = this.type === "area"
           ? "Area mode stacks selected measures cumulatively. Use measures with comparable units and ranges; stacked values may otherwise be misleading."
           : "Selected measures share one value axis; differences in units or ranges can affect comparisons.";
         indexes.forEach((index) => {
           const y = rows.map((row) => numeric(row[index]));
-          if (this.type === "bar" && horizontalBars) traces.push({ type: "bar", orientation: "h", name: columns[index], x: y, y: labels });
-          else if (this.type === "bar") traces.push({ type: "bar", name: columns[index], x: labels, y });
-          else if (this.type === "line") traces.push({ type: "scatter", mode: "lines+markers", name: columns[index], x: labels, y });
-          else if (this.type === "area") traces.push({ type: "scatter", mode: "lines", stackgroup: "one", name: columns[index], x: labels, y });
+          if (this.type === "bar" && horizontalBars) traces.push({ type: "bar", orientation: "h", name: safePlotlyText(columns[index]), x: y, y: labels });
+          else if (this.type === "bar") traces.push({ type: "bar", name: safePlotlyText(columns[index]), x: labels, y });
+          else if (this.type === "line") traces.push({ type: "scatter", mode: "lines+markers", name: safePlotlyText(columns[index]), x: labels, y });
+          else if (this.type === "area") traces.push({ type: "scatter", mode: "lines", stackgroup: "one", name: safePlotlyText(columns[index]), x: labels, y });
         });
       }
       const is3d = this.type === "surface3d";
       const labelMargin = horizontalBars ? Math.min(300, Math.max(140, Math.ceil(Math.max(...labels.map((label) => label.length)) * 6))) : 58;
       const surfaceFallback = this.type === "surface3d" && (rows.length < 2 || indexes.length < 2);
-      const layout = { autosize: true, height: horizontalBars ? Math.min(2200, Math.max(620, rows.length * 18)) : 420, margin: { l: labelMargin, r: 24, t: 28, b: horizontalBars ? 60 : 90 }, paper_bgcolor: "#fff", plot_bgcolor: "#fff", font: { color: "#172b49" }, legend: { orientation: "h", y: -0.24 }, xaxis: { automargin: true, title: horizontalBars ? columns[indexes[0]] : undefined, tickangle: labels.length > 12 && !horizontalBars ? -45 : 0 }, yaxis: { automargin: true, title: horizontalBars ? columns[xIndex] : undefined }, ...(is3d ? { scene: { xaxis: { title: surfaceFallback ? "Row" : columns[xIndex] }, yaxis: { title: surfaceFallback ? "Numeric series" : "Series" }, zaxis: { title: "Value" } } } : {}), ...(this.type === "bar" ? { barmode: "group" } : {}) };
+      const layout = { autosize: true, height: horizontalBars ? Math.min(2200, Math.max(620, rows.length * 18)) : 420, margin: { l: labelMargin, r: 24, t: 28, b: horizontalBars ? 60 : 90 }, paper_bgcolor: "#fff", plot_bgcolor: "#fff", font: { color: "#172b49" }, legend: { orientation: "h", y: -0.24 }, xaxis: { automargin: true, title: horizontalBars ? safePlotlyText(columns[indexes[0]]) : undefined, tickangle: labels.length > 12 && !horizontalBars ? -45 : 0 }, yaxis: { automargin: true, title: horizontalBars ? safePlotlyText(columns[xIndex]) : undefined }, ...(is3d ? { scene: { xaxis: { title: surfaceFallback ? "Row" : safePlotlyText(columns[xIndex]) }, yaxis: { title: surfaceFallback ? "Numeric series" : "Series" }, zaxis: { title: "Value" } } } : {}), ...(this.type === "bar" ? { barmode: "group" } : {}) };
       this._plot.querySelector(".note")?.remove();
       this._plot.style.height = `${layout.height}px`;
       this._plot.setAttribute("aria-label", `${this.type} graph for ${rows.length} table rows using ${indexes.length} numeric field${indexes.length === 1 ? "" : "s"}`);
@@ -249,5 +255,5 @@
     }
   }
   if (!customElements.get("grid-graph")) customElements.define("grid-graph", GridGraph);
-  if (typeof module !== "undefined" && module.exports) module.exports = { create3DTrace, createPieTrace, shouldUseHorizontalBars, defaultMeasureNames, schedulePlotResize, cancelPlotResize };
+  if (typeof module !== "undefined" && module.exports) module.exports = { create3DTrace, createPieTrace, shouldUseHorizontalBars, defaultMeasureNames, safePlotlyText, schedulePlotResize, cancelPlotResize };
 })(window);

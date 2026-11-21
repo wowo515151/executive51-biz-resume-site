@@ -16,8 +16,8 @@ test("3D mode uses labeled points when a surface cannot be formed", () => {
     define: (_name, definition) => { graphClass = definition; }
   };
   try {
-    delete require.cache[require.resolve("../site/GridGraph.a96a34c.js")];
-    require("../site/GridGraph.a96a34c.js");
+    delete require.cache[require.resolve("../site/GridGraph.af2c357.js")];
+    require("../site/GridGraph.af2c357.js");
   } finally {
     for (const [key, value] of Object.entries(saved)) {
       if (value === undefined) delete global[key];
@@ -26,7 +26,7 @@ test("3D mode uses labeled points when a surface cannot be formed", () => {
   }
 
   const rows = [["Vitamin C", "5"], ["Calcium", "12"], ["Sodium", ""]];
-  const result = graphClass && require("../site/GridGraph.a96a34c.js").create3DTrace(
+  const result = graphClass && require("../site/GridGraph.af2c357.js").create3DTrace(
     rows, ["nutrient_web_name", "nutrient_value"], [1], rows.map((row) => row[0])
   );
   assert.equal(result.fallback, true);
@@ -38,7 +38,7 @@ test("3D mode uses labeled points when a surface cannot be formed", () => {
 });
 
 test("3D mode uses a surface when two measures and two rows are available", () => {
-  const create3DTrace = require("../site/GridGraph.a96a34c.js").create3DTrace;
+  const create3DTrace = require("../site/GridGraph.af2c357.js").create3DTrace;
   const result = create3DTrace(
     [["North", "10", "3"], ["South", "20", "7"]],
     ["region", "population", "area"], [1, 2], ["North", "South"]
@@ -51,7 +51,7 @@ test("3D mode uses a surface when two measures and two rows are available", () =
 });
 
 test("pie mode keeps positive values and omits zero or missing rows", () => {
-  const { createPieTrace } = require("../site/GridGraph.a96a34c.js");
+  const { createPieTrace } = require("../site/GridGraph.af2c357.js");
   const result = createPieTrace(
     [["A", "5"], ["B", "0"], ["C", ""], ["D", "12"]],
     1,
@@ -63,27 +63,43 @@ test("pie mode keeps positive values and omits zero or missing rows", () => {
 });
 
 test("pie mode refuses negative values rather than silently converting them to zero", () => {
-  const { createPieTrace } = require("../site/GridGraph.a96a34c.js");
+  const { createPieTrace } = require("../site/GridGraph.af2c357.js");
   const result = createPieTrace([["positive", "5"], ["negative", "-2"]], 1, ["positive", "negative"]);
   assert.equal(result.trace, null);
   assert.equal(result.reason, "negative");
 });
 
 test("pie mode reports when there are no positive values", () => {
-  const { createPieTrace } = require("../site/GridGraph.a96a34c.js");
+  const { createPieTrace } = require("../site/GridGraph.af2c357.js");
   const result = createPieTrace([["zero", "0"], ["missing", ""]], 1, ["zero", "missing"]);
   assert.equal(result.trace, null);
   assert.equal(result.reason, "empty");
 });
 
+test("Plotly text values escape HTML metacharacters before chart rendering", () => {
+  const { safePlotlyText, createPieTrace, create3DTrace } = require("../site/GridGraph.af2c357.js");
+  const hostile = `<img src=x onerror="alert('x')"> &`;
+  const safe = "&lt;img src=x onerror=&quot;alert(&#39;x&#39;)&quot;&gt; &amp;";
+  assert.equal(safePlotlyText(hostile), safe);
+  assert.equal(createPieTrace([["row", "1"]], 1, [hostile]).trace.labels[0], safe);
+  const surface = create3DTrace([[hostile, "1"], ["second", "2"]], ["category", "<series>"], [1], [hostile]);
+  assert.deepEqual(surface.trace.customdata[0], [safe, "&lt;series&gt;"]);
+  const matrix = create3DTrace(
+    [[hostile, "1", "3"], ["second", "2", "4"]],
+    ["category", "<series>", "&amount"], [1, 2], [hostile, "second"]
+  );
+  assert.deepEqual(matrix.trace.x, [safe, "second"]);
+  assert.deepEqual(matrix.trace.y, ["&lt;series&gt;", "&amp;amount"]);
+});
+
 test("dense categorical bar labels use a readable horizontal layout", () => {
-  const { shouldUseHorizontalBars } = require("../site/GridGraph.a96a34c.js");
+  const { shouldUseHorizontalBars } = require("../site/GridGraph.af2c357.js");
   const labels = Array.from({ length: 100 }, (_, index) => `Municipality ${index + 1}`);
   assert.equal(shouldUseHorizontalBars(labels), true);
 });
 
 test("date sequences retain a compact vertical bar layout", () => {
-  const { shouldUseHorizontalBars } = require("../site/GridGraph.a96a34c.js");
+  const { shouldUseHorizontalBars } = require("../site/GridGraph.af2c357.js");
   const labels = Array.from({ length: 100 }, (_, index) => {
     const date = new Date(Date.UTC(2020, index, 1));
     return date.toISOString().slice(0, 10);
@@ -92,7 +108,7 @@ test("date sequences retain a compact vertical bar layout", () => {
 });
 
 test("identifier, order, and decimal fields are not selected as default measures", () => {
-  const { defaultMeasureNames } = require("../site/GridGraph.a96a34c.js");
+  const { defaultMeasureNames } = require("../site/GridGraph.af2c357.js");
   assert.deepEqual(defaultMeasureNames([
     "nutrient_name_id", "nutrient_code", "nutrient_decimals", "nutrient_web_order", "nutrient_group_id"
   ]), []);
@@ -112,8 +128,8 @@ test("container resize coalesces Plotly size updates and cancels when disconnect
   global.HTMLElement = class {};
   global.customElements = { get: () => undefined, define: () => {} };
   try {
-    delete require.cache[require.resolve("../site/GridGraph.a96a34c.js")];
-    const { schedulePlotResize, cancelPlotResize } = require("../site/GridGraph.a96a34c.js");
+    delete require.cache[require.resolve("../site/GridGraph.af2c357.js")];
+    const { schedulePlotResize, cancelPlotResize } = require("../site/GridGraph.af2c357.js");
     const component = { _resizeFrame: null, _hasDrawn: true, _plot: {}, isConnected: true };
     schedulePlotResize(component);
     schedulePlotResize(component);
@@ -129,7 +145,7 @@ test("container resize coalesces Plotly size updates and cancels when disconnect
     assert.equal(frames.size, 0);
     assert.equal(resized, 1);
   } finally {
-    delete require.cache[require.resolve("../site/GridGraph.a96a34c.js")];
+    delete require.cache[require.resolve("../site/GridGraph.af2c357.js")];
     for (const [key, value] of Object.entries(saved)) {
       if (value === undefined) delete global[key];
       else global[key] = value;
