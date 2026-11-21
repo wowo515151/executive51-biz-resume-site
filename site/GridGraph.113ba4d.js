@@ -1,7 +1,14 @@
 /* Accessible selector and data adapter for Plotly.js. */
 (function (root) {
   "use strict";
-  const TYPES = ["bar", "line", "area", "scatter", "pie", "heatmap", "surface3d"];
+  const TYPES = ["line", "bar", "area", "scatter", "pie", "heatmap", "surface3d"];
+  const periodDate = (value) => {
+    const text = String(value ?? "").trim();
+    const match = text.match(/^(\d{4})-(\d{2})(?:-(\d{2}))?$/);
+    if (!match) return null;
+    const date = `${match[1]}-${match[2]}-${match[3] || "01"}`;
+    return Number.isNaN(Date.parse(`${date}T00:00:00Z`)) ? null : date;
+  };
   const numeric = (value) => {
     if (typeof value === "number") return Number.isFinite(value) ? value : null;
     if (typeof value !== "string" || !value.trim()) return null;
@@ -109,7 +116,7 @@
       super();
       this.attachShadow({ mode: "open" });
       this.table = { columns: [], rows: [] };
-      this.type = "bar";
+      this.type = this.getAttribute("data-time-series") === "true" ? "line" : (this.getAttribute("data-default-type") || "bar");
       this._resizeFrame = null;
       this._hasDrawn = false;
       this._resize = () => schedulePlotResize(this);
@@ -148,6 +155,7 @@
 
       const fields = document.createElement("div"); fields.className = "fields";
       const xLabel = document.createElement("label"); xLabel.textContent = "Category or X axis";
+      this._xLabel = xLabel;
       this._xSelect = document.createElement("select"); this._xSelect.setAttribute("aria-label", "Category or X axis");
       this._xSelect.addEventListener("change", () => this.draw()); xLabel.append(this._xSelect);
       const series = document.createElement("fieldset"); series.className = "series";
@@ -156,14 +164,26 @@
       this._fieldNote = document.createElement("p"); this._fieldNote.className = "field-note"; this._fieldNote.setAttribute("role", "status");
       fields.append(xLabel, series, this._fieldNote);
 
+      const period = document.createElement("div"); period.className = "fields time-period";
+      period.setAttribute("role", "group"); period.setAttribute("aria-label", "Time period");
+      this._periodStart = document.createElement("input"); this._periodStart.type = "date"; this._periodStart.setAttribute("aria-label", "Start date");
+      this._periodEnd = document.createElement("input"); this._periodEnd.type = "date"; this._periodEnd.setAttribute("aria-label", "End date");
+      const startLabel = document.createElement("label"); startLabel.textContent = "From"; startLabel.append(this._periodStart);
+      const endLabel = document.createElement("label"); endLabel.textContent = "To"; endLabel.append(this._periodEnd);
+      this._periodStart.addEventListener("change", () => { if (this._periodStart.value > this._periodEnd.value) this._periodEnd.value = this._periodStart.value; this.draw(); });
+      this._periodEnd.addEventListener("change", () => { if (this._periodEnd.value < this._periodStart.value) this._periodStart.value = this._periodEnd.value; this.draw(); });
+      period.append(startLabel, endLabel);
+      period.hidden = this.getAttribute("data-time-series") !== "true";
+
       this._plot = document.createElement("div"); this._plot.className = "plot"; this._plot.setAttribute("role", "img"); this._plot.setAttribute("aria-label", "Interactive graph");
-      this.shadowRoot.replaceChildren(s, controls, fields, this._plot);
+      this.shadowRoot.replaceChildren(s, controls, period, fields, this._plot);
       this.updateFieldControls();
       this.draw();
     }
     updateFieldControls() {
       if (!this._xSelect || !this._seriesOptions) return;
       const columns = this.table.columns || [], rows = this.table.rows || [];
+      const timeSeries = this.getAttribute("data-time-series") === "true" && columns.length === 2 && columns[0] === "Reference period";
       const oldX = this._xSelect.value;
       const previousY = new Set([...this._seriesOptions.querySelectorAll("input:checked")].map((input) => input.value));
       const numericIndexes = columns.map((_, index) => index).filter((index) => rows.some((row) => numeric(row[index]) !== null));
@@ -192,6 +212,21 @@
         ? `Choose up to 100 numeric fields. ${defaultNote}`
         : `${defaultNote} Choose any field when it is meaningful for your view.`;
       this._defaultFieldNote = this._fieldNote.textContent;
+      this._xLabel.hidden = timeSeries;
+      this._seriesOptions.parentElement.hidden = timeSeries;
+      this._fieldNote.hidden = timeSeries;
+      if (this._periodStart && this._periodEnd) {
+        this._periodStart.parentElement.parentElement.hidden = !timeSeries;
+        if (timeSeries) {
+          const dates = rows.map((row) => periodDate(row[0])).filter(Boolean).sort();
+          if (dates.length) {
+            this._periodStart.min = dates[0]; this._periodStart.max = dates.at(-1);
+            this._periodEnd.min = dates[0]; this._periodEnd.max = dates.at(-1);
+            if (!this._periodStart.value || this._periodStart.value < dates[0] || this._periodStart.value > dates.at(-1)) this._periodStart.value = dates[0];
+            if (!this._periodEnd.value || this._periodEnd.value > dates.at(-1) || this._periodEnd.value < dates[0]) this._periodEnd.value = dates.at(-1);
+          }
+        }
+      }
     }
     message(text, isError = false) {
       this._hasDrawn = false;
@@ -202,7 +237,11 @@
     }
     draw() {
       if (!this._plot) return;
-      const columns = this.table.columns || [], rows = (this.table.rows || []).slice(0, 2000);
+      const columns = this.table.columns || [];
+      let rows = (this.table.rows || []).slice(0, 2000);
+      if (this.getAttribute("data-time-series") === "true" && columns.length === 2 && columns[0] === "Reference period" && this._periodStart?.value && this._periodEnd?.value) {
+        rows = rows.filter((row) => { const date = periodDate(row[0]); return date && date >= this._periodStart.value && date <= this._periodEnd.value; });
+      }
       if (!columns.length || !rows.length) { this.message("Choose Load dataset to display a graph."); return; }
       if (!root.Plotly || typeof root.Plotly.react !== "function") { this.message("The graphing library did not load. Check your connection and reload this page.", true); return; }
       const indexes = [...(this._seriesOptions?.querySelectorAll("input:checked") || [])].map((input) => columns.indexOf(input.value)).filter((index) => index >= 0);
@@ -269,5 +308,5 @@
     }
   }
   if (!customElements.get("grid-graph")) customElements.define("grid-graph", GridGraph);
-  if (typeof module !== "undefined" && module.exports) module.exports = { create3DTrace, createPieTrace, shouldUseHorizontalBars, defaultMeasureNames, safePlotlyText, schedulePlotResize, cancelPlotResize };
+  if (typeof module !== "undefined" && module.exports) module.exports = { create3DTrace, createPieTrace, shouldUseHorizontalBars, defaultMeasureNames, safePlotlyText, schedulePlotResize, cancelPlotResize, periodDate };
 })(window);
