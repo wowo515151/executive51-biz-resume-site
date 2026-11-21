@@ -26,3 +26,8 @@ class SiteNavigation extends HTMLElement {
 if (!customElements.get("site-nav")) {
   customElements.define("site-nav", SiteNavigation);
 }
+
+const backgroundsScript = document.createElement("script");
+backgroundsScript.src = "site-backgrounds.js";
+backgroundsScript.defer = true;
+document.head.append(backgroundsScript);
