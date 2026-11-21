@@ -17,34 +17,11 @@
         prices: { name: "Consumer Price Index", description: "Explore Canada's monthly Consumer Price Index for all items across the latest 100 reference months. The index follows price change for a representative basket of consumer goods and services. Review the official table for geography, product coverage, and index-period details before comparing series.", format: "json", schema: "statcan-wds", timeSeries: { field: "Reference period", filters: [] }, graphableFields: ["Value"], request: { productId: 18100004, coordinate: "2.2.0.0.0.0.0.0.0.0", latestN: 100 }, sourceUrl: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000401", fetchURL: STATCAN_WDS_URL, verified: true }
       }
     },
-    healthcanada: {
-      name: "Health Canada Canadian Nutrient File",
-      url: "https://health-products.canada.ca/api/documentation/cnf-documentation-en.html",
-      datasets: {
-        foods: { name: "Foods in the Canadian Nutrient File", description: "Food codes and labels are reference identifiers and names, not numeric measures. This table is not offered as a graph dataset.", format: "json", graphableFields: [], sourceUrl: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/food/?lang=en&type=json", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/food/?lang=en&type=json", verified: true },
-        nutrients: { name: "Nutrient names and units", description: "Nutrient identifiers, names, units, and order fields describe the file structure, not numeric observations. This table is not offered as a graph dataset.", format: "json", graphableFields: [], sourceUrl: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&type=json", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&type=json", verified: true },
-        gouda: { name: "Nutrient amounts in Gouda cheese", description: "Review numeric nutrient measurements for the Canadian Nutrient File's Gouda cheese example (food code 109). Values are reported per 100 grams of edible portion in Health Canada's 2015 CNF publication, which the source says will not be updated. The graph begins with grams and lets you select another reported unit; compare nutrient categories only within the selected unit. This reference composition is not personalized dietary advice.", format: "json", graphableFields: ["nutrient_value"], unitField: "unit", defaultUnit: "g", unitSourceURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&type=json", sourceUrl: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=109&lang=en&type=json", verified: true },
-        salmon: { name: "Nutrient amounts in wild Atlantic salmon", description: "Explore numeric nutrient values for raw wild Atlantic salmon (CNF food code 3049). Values are reported per 100 grams of edible portion in Health Canada's 2015 CNF publication, which the source says will not be updated. The graph begins with grams and lets you select another reported unit; compare nutrient categories only within the selected unit. This reference composition is not personalized dietary advice.", format: "json", graphableFields: ["nutrient_value"], unitField: "unit", defaultUnit: "g", unitSourceURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&type=json", sourceUrl: "https://food-nutrition.canada.ca/cnf-fce/serving-portion?id=3049", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=3049&lang=en&type=json", verified: true },
-        apple: { name: "Nutrient amounts in raw apple with skin", description: "Explore numeric nutrient values for raw apple with skin (CNF food code 1696). Values are reported per 100 grams of edible portion in Health Canada's 2015 CNF publication, which the source says will not be updated. The graph begins with grams and lets you select another reported unit; compare nutrient categories only within the selected unit. This reference composition is not personalized dietary advice.", format: "json", graphableFields: ["nutrient_value"], unitField: "unit", defaultUnit: "g", unitSourceURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientname/?lang=en&type=json", sourceUrl: "https://food-nutrition.canada.ca/cnf-fce/serving-portion?id=1696", fetchURL: "https://food-nutrition.canada.ca/api/canadian-nutrient-file/nutrientamount/?id=1696&lang=en&type=json", verified: true }
-      }
-    },
     quebec: {
       name: "Données Québec",
       url: "https://www.donneesquebec.ca/",
       datasets: {
-        municipalities: { name: "Québec municipal population and area", description: "Compare population and land area for Québec municipalities, with regional and MRC context. The source register is updated continuously, while its population figures are based on provincial decrees using estimates from the Institut de la statistique du Québec. The chart request asks only for municipality, population, area, region, and MRC fields; contact details are not requested.", format: "json", schema: "ckan-datastore", graphableFields: ["mpopul", "msuperf"], request: { resourceId: "19385b4e-5503-4330-9e59-f998f5918363", limit: 100, fields: ["munnom", "mpopul", "msuperf", "regadm", "mrc"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/repertoire-des-municipalites-du-quebec", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true },
-        population: { name: "Québec population estimates and projections", description: "Explore comparable population estimates and projections for Québec health and social service territories from 2001 to 2051. Records are organized by territory, year, data type, and sex, with total population available in the TousLesAges field. The source describes the series as supporting both retrospective and forward-looking analysis; interpret projected values according to the official methodology.", format: "json", schema: "ckan-datastore", timeSeries: { field: "Annee", filters: ["NiveauGeographique", "Territoire", "TypeDonnees", "Sexe"] }, graphableFields: ["TousLesAges"], request: { resourceId: "05c3c53d-db97-4bc3-8221-d8af47b4b93e", limit: 100, fields: ["NiveauGeographique", "Territoire", "Annee", "TypeDonnees", "Sexe", "TousLesAges"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/estimations-et-projections-de-population-comparables", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true },
-        finances: { name: "Québec municipal financial profile, 2025 data", description: "Browse municipal population counts in the 2025 Quebec municipal financial profile. Opaque financial code fields remain in the source table and are excluded from chart measures until their meanings are mapped.", format: "json", schema: "ckan-datastore", graphableFields: ["population"], request: { resourceId: "15192f34-a635-47f5-aaf9-eb1621d65b2e", limit: 100, fields: ["nom_organisme", "population", "desc_cp", "FIALX01959", "FIALX01960", "FIALX01961", "FIALX01962", "FIALX01963", "FIALX01977", "FIALX02005", "FIALX02006", "FIALX02007", "FIALX02008", "FIALX02009", "FIALX02010", "FIALX02011", "FIALX02097"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true }
-      }
-    },
-    toronto: {
-      hidden: true,
-      name: "City of Toronto Open Data",
-      url: "https://open.toronto.ca/",
-      datasets: {
-        indicators: { name: "Toronto's Dashboard Key Indicators", description: "Explore key indicator data shared with Toronto's City Manager's Office by City divisions and agencies. The dataset includes recent and historical periods used to assess trends for Toronto and its services. Consult the official record for the dashboard context, update schedule, and field descriptions.", format: "json", sourceUrl: "https://open.toronto.ca/dataset/toronto-s-dashboard-key-indicators/", resourceId: "2350d71a-31d1-4387-9e29-4c1cfc866894", endpoint: "https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/datastore_search", fetchURL: null, verified: false, disabledReason: "Toronto's public data API returned the sample, but its response does not allow browser access from this graph site." },
-        bicycle: { name: "Bicycle and Micromobility Cordon Count", description: "Review bicycle and micromobility counts and classifications collected in Toronto's 2022 cordon count study. The observations describe counted travel across the study locations and provide a snapshot for comparing mobility patterns. Check the official record for collection methods, limitations, and available formats.", format: "json", sourceUrl: "https://open.toronto.ca/dataset/bicycle-and-micromobility-cordon-count/", resourceId: "da07a807-86f0-40b7-b5d7-bdbde1c87925", endpoint: "https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/datastore_search", fetchURL: null, verified: false, disabledReason: "This dataset record does not specify a reuse licence, and Toronto's API does not allow browser access from this graph site." },
-        quality: { name: "Toronto Open Data Quality Scores", description: "Explore Toronto’s catalogue-scorecard results and the scoring models from the portal’s first Data Quality Scoring iteration. The scores summarize dataset quality characteristics such as usability, timeliness, completeness, and description quality. Review the official record for newer score files, explanation codes, and update details.", format: "json", sourceUrl: "https://open.toronto.ca/dataset/catalogue-quality-scores/", resourceId: "22f223e7-73f7-4842-935c-80a0ba5c3e5b", endpoint: "https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/datastore_search", fetchURL: null, verified: false, disabledReason: "Toronto's public data API returned the sample, but its response does not allow browser access from this graph site." }
+        population: { name: "Québec population estimates and projections", description: "Explore comparable population estimates and projections for Québec health and social service territories from 2001 to 2051. Records are organized by territory, year, data type, and sex, with total population available in the TousLesAges field. The source describes the series as supporting both retrospective and forward-looking analysis; interpret projected values according to the official methodology.", format: "json", schema: "ckan-datastore", timeSeries: { field: "Annee", filters: ["NiveauGeographique", "Territoire", "TypeDonnees", "Sexe"] }, graphableFields: ["TousLesAges"], request: { resourceId: "05c3c53d-db97-4bc3-8221-d8af47b4b93e", limit: 100, fields: ["NiveauGeographique", "Territoire", "Annee", "TypeDonnees", "Sexe", "TousLesAges"] }, sourceUrl: "https://www.donneesquebec.ca/recherche/dataset/estimations-et-projections-de-population-comparables", fetchURL: "https://www.donneesquebec.ca/recherche/api/3/action/datastore_search", verified: true }
       }
     }
   };
@@ -137,7 +114,7 @@
         value = String(numeric * (10 ** factor));
       }
       return [String(period).slice(0, 80), value];
-    });
+    }).sort((left, right) => left[0].localeCompare(right[0], undefined, { numeric: true }));
     return { columns: ["Reference period", "Value"], rows };
   }
   function normalizeCKANDatastore(json, request) {
@@ -152,6 +129,17 @@
       throw new Error("The configured DataStore fields are invalid.");
     }
     return { columns: fields, rows: json.result.records.map((record) => fields.map((field) => record && record[field] != null ? String(record[field]).slice(0, 20_000) : "")) };
+  }
+  function normalizeSocrata(json, request) {
+    if (!Array.isArray(json)) throw new Error("Socrata returned an unexpected SODA response.");
+    if (!request || !Array.isArray(request.fields) || !request.fields.length || request.fields.length > MAX_COLUMNS || request.fields.some((field) => typeof field !== "string" || !/^[A-Za-z0-9_]+$/.test(field))) {
+      throw new Error("The configured Socrata fields are invalid.");
+    }
+    if (!Number.isInteger(request.limit) || request.limit < 1 || request.limit > MAX_ROWS || json.length > request.limit) throw new Error("Socrata returned more rows than requested.");
+    return { columns: [...request.fields], rows: json.map((record) => {
+      if (!record || typeof record !== "object" || Array.isArray(record)) throw new Error("Socrata returned a non-record row.");
+      return request.fields.map((field) => record[field] == null ? "" : String(record[field]).slice(0, 20_000));
+    }) };
   }
   function isGraphableTable(table, graphableFields) {
     if (!table || !Array.isArray(table.columns) || !Array.isArray(table.rows) || !Array.isArray(graphableFields)) return false;
@@ -169,12 +157,25 @@
   function isValidTimePeriod(value) {
     const text = String(value ?? "").trim();
     if (/^\d{4}$/.test(text)) return true;
+    const timestamp = text.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,9}))?)?(Z|[+-]\d{2}:\d{2})?$/i);
+    if (timestamp) {
+      const year = Number(timestamp[1]), month = Number(timestamp[2]), day = Number(timestamp[3]);
+      const hour = Number(timestamp[4]), minute = Number(timestamp[5]), second = Number(timestamp[6] || 0);
+      if (month < 1 || month > 12 || day < 1 || (timestamp[7] || "").length > 3 || hour > 23 || minute > 59 || second > 59) return false;
+      const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+      const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      if (day > daysInMonth[month - 1]) return false;
+      const offset = (timestamp[8] || "").match(/^([+-])(\d{2}):(\d{2})$/);
+      if (offset && (Number(offset[2]) > 14 || Number(offset[3]) > 59 || (Number(offset[2]) === 14 && Number(offset[3]) !== 0))) return false;
+      return true;
+    }
     const match = text.match(/^(\d{4})-(\d{2})(?:-(\d{2}))?$/);
     if (!match) return false;
     const year = Number(match[1]), month = Number(match[2]), day = Number(match[3] || 1);
     if (month < 1 || month > 12 || day < 1 || day > 31) return false;
-    const date = new Date(Date.UTC(year, month - 1, day));
-    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+    const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    return day <= daysInMonth[month - 1];
   }
   function isTimeSeriesTable(table, timeField, graphableFields, filterFields = []) {
     if (!table || !Array.isArray(table.columns) || !Array.isArray(table.rows) || !Array.isArray(graphableFields) || !graphableFields.length || !Array.isArray(filterFields)) return false;
@@ -193,6 +194,44 @@
       const raw = row[index];
       return raw === null || raw === undefined || String(raw).trim() === "" || Number.isFinite(typeof raw === "number" ? raw : Number(String(raw).replace(/[,$%\s]/g, "")));
     }));
+  }
+  function requestOptionsFor(dataset, signal) {
+    const requestOptions = {
+      mode: "cors", credentials: "omit", signal,
+      headers: { Accept: dataset.format === "json" ? "application/json" : "text/csv, application/json" }
+    };
+    if (dataset.schema === "statcan-wds") {
+      requestOptions.method = "POST";
+      requestOptions.headers = { Accept: "application/json", "Content-Type": "application/json" };
+      requestOptions.body = JSON.stringify([dataset.request]);
+    } else if (dataset.schema === "socrata-soda2") {
+      requestOptions.method = "GET";
+    }
+    return requestOptions;
+  }
+  function buildSocrataURL(endpoint, dataset) {
+    const request = dataset?.request;
+    const timeField = dataset?.timeSeries?.field;
+    const fieldPattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
+    if (!request || !/^[a-z0-9]{4}-[a-z0-9]{4}$/.test(request.resourceId) || !Number.isInteger(request.limit) || request.limit < 1 || request.limit > MAX_ROWS) {
+      throw new Error("The configured Socrata resource or row limit is invalid.");
+    }
+    if (!fieldPattern.test(timeField || "") || !Array.isArray(request.fields) || !request.fields.length || request.fields.length > MAX_COLUMNS || request.fields.some((field) => typeof field !== "string" || !fieldPattern.test(field)) || new Set(request.fields).size !== request.fields.length || !request.fields.includes(timeField)) {
+      throw new Error("The configured Socrata fields or time axis are invalid.");
+    }
+    if (!Array.isArray(dataset.graphableFields) || !dataset.graphableFields.length || dataset.graphableFields.some((field) => !fieldPattern.test(field) || !request.fields.includes(field))) {
+      throw new Error("The configured Socrata measures are invalid.");
+    }
+    const url = new URL(endpoint);
+    const source = new URL(dataset.sourceUrl);
+    if (url.protocol !== "https:" || source.protocol !== "https:" || url.hostname !== source.hostname || url.pathname !== `/resource/${request.resourceId}.json`) {
+      throw new Error("The configured Socrata endpoint does not match its official HTTPS source.");
+    }
+    url.search = "";
+    url.searchParams.set("$select", request.fields.join(","));
+    url.searchParams.set("$order", `${timeField} DESC`);
+    url.searchParams.set("$limit", String(request.limit));
+    return url;
   }
   async function readBounded(response) {
     if (!response.body || typeof response.body.getReader !== "function") throw new Error("This browser cannot safely stream the dataset response.");
@@ -213,7 +252,7 @@
     if (!info.dataset.verified || !info.dataset.fetchURL) throw new Error("The dataset's direct public endpoint has not been verified yet.");
     if (!isTimeSeriesDataset(info.dataset)) throw new Error("This dataset is disabled. Only reviewed time-series datasets can be graphed.");
     if (!Array.isArray(info.dataset.graphableFields) || !info.dataset.graphableFields.length) throw new Error("This dataset contains labels or reference fields but no approved numeric measure for graphing.");
-    const url = new URL(info.dataset.fetchURL);
+    const url = info.dataset.schema === "socrata-soda2" ? buildSocrataURL(info.dataset.fetchURL, info.dataset) : new URL(info.dataset.fetchURL);
     if (url.protocol !== "https:") throw new Error("Only HTTPS data sources are supported.");
     if (info.dataset.schema === "ckan-datastore") {
       const request = info.dataset.request;
@@ -229,15 +268,7 @@
       else options.signal.addEventListener("abort", cancel, { once: true });
     }
     try {
-      const requestOptions = {
-        mode: "cors", credentials: "omit", signal: controller.signal,
-        headers: { Accept: "text/csv, application/json" },
-        ...(info.dataset.schema === "ckan-datastore" ? {} : info.dataset.request ? {
-          method: "POST",
-          headers: { Accept: "application/json", "Content-Type": "application/json" },
-          body: JSON.stringify([info.dataset.request])
-        } : {})
-      };
+      const requestOptions = requestOptionsFor(info.dataset, controller.signal);
       const response = await (options.fetch || fetch)(url.href, requestOptions);
       if (!response.ok) throw new Error(`Data source returned HTTP ${response.status}.`);
       const contentType = (response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
@@ -249,7 +280,7 @@
       if (declared > MAX_BYTES) throw new Error("Dataset exceeds the 5 MB limit.");
       const text = await readBounded(response);
       const json = info.dataset.format === "json" ? JSON.parse(text) : null;
-      let table = info.dataset.format === "csv" ? parseCSV(text) : info.dataset.schema === "statcan-wds" ? normalizeStatCanWDS(json, info.dataset.request.productId) : info.dataset.schema === "ckan-datastore" ? normalizeCKANDatastore(json, info.dataset.request) : normalizeJSON(json);
+      let table = info.dataset.format === "csv" ? parseCSV(text) : info.dataset.schema === "statcan-wds" ? normalizeStatCanWDS(json, info.dataset.request.productId) : info.dataset.schema === "ckan-datastore" ? normalizeCKANDatastore(json, info.dataset.request) : info.dataset.schema === "socrata-soda2" ? normalizeSocrata(json, info.dataset.request) : normalizeJSON(json);
       if (info.dataset.unitSourceURL) {
         const unitResponse = await (options.fetch || fetch)(info.dataset.unitSourceURL, { mode: "cors", credentials: "omit", signal: controller.signal, headers: { Accept: "application/json" } });
         if (!unitResponse.ok) throw new Error(`Health Canada unit definitions returned HTTP ${unitResponse.status}.`);
@@ -275,5 +306,5 @@
       options.signal?.removeEventListener("abort", cancel);
     }
   }
-  root.Gridpull = Object.freeze({ listSites, listDatasets, getInfo, load, parseCSV, normalizeJSON, normalizeStatCanWDS, normalizeCKANDatastore, isGraphableTable, isTimeSeriesTable });
+  root.Gridpull = Object.freeze({ listSites, listDatasets, getInfo, load, parseCSV, normalizeJSON, normalizeStatCanWDS, normalizeCKANDatastore, normalizeSocrata, isGraphableTable, isTimeSeriesTable, requestOptionsFor, buildSocrataURL });
 })(typeof window === "undefined" ? globalThis : window);

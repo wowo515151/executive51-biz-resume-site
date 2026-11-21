@@ -59,4 +59,20 @@ This document defines which graph types are suitable for the current data and wh
 
 The CNF food-label and nutrient-definition tables are not graph datasets: their numeric-looking codes or order fields identify records rather than measure quantities. They are removed from the graph directory and cannot be loaded through the graph loader. The replacement nutrient profiles use named food records with numeric nutrient amounts; the official source calls them part of the 2015 CNF publication and says it will not update that publication.
 
-No current dataset meets the requirements for pie, heatmap, or 3D surface, so those controls are not shown. Their implementations remain available for a future dataset that meets the requirements above.
+The earlier cross-sectional chart options remain unavailable on current pages. The time-series addendum below defines separate calendar heatmap and 3D time-map options for regular observations; these modes do not reuse the cross-sectional heatmap or 3D surface encodings.
+
+## Current time-series chart choices
+
+This addendum applies to the local time-series-only graph pages and does not amend Work/Spec.html. Pages declare only modes supported by their source cadence and measure semantics. A mode that becomes unsuitable for the selected date range is hidden. Existing visitor effects, panes, and page layout are unchanged.
+
+| Mode | Interpretation and gate |
+| --- | --- |
+| Line | Chronologically connects observations; missing values remain gaps. |
+| Bar | Compares observed values at discrete, chronologically ordered periods. |
+| Area | Fills beneath one series; it does not stack other measures. Multiple measures require explicit declarations that they are comparable and additive. |
+| Scatter | Shows each value at its time period without connecting adjacent observations. |
+| Heatmap | Places observed values in a calendar matrix: year by month, year by quarter, or year by annual period. It requires at least three unique regular periods over two or more years. Missing calendar cells stay blank; values are not aggregated or estimated. |
+| 3D time map | For regular monthly or quarterly series only, uses calendar year, observed month/quarter, and the single measure value. It uses markers for actual observations and does not interpolate a surface or invent a measure axis. Annual data has one temporal dimension, so this option is omitted there. |
+| Pie | Not offered on current pages. It is permitted only for one measure explicitly declared as nonnegative additive totals over disjoint periods, with 2–20 complete unique periods. Population counts, employment levels, and price indexes are not additive across time. |
+
+Current Statistics Canada population, labour, and consumer-price pages offer line, bar, area, scatter, heatmap, and 3D time map. Québec population estimates and projections offer line, bar, area, scatter, and annual heatmap; the annual series has no separate seasonal dimension for a 3D view. No page declares additive period totals, comparable multi-measure series, or stackable measures, so pie and multi-measure comparison/stacking remain unavailable.

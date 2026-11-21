@@ -24,8 +24,9 @@ body {
   color: var(--ink);
   line-height: 1.7;
 }
+body[data-background="crystal"] { background-color: #071a38; background-image: url("assets/large2.png"); background-position: center 16%; background-size: cover; background-attachment: fixed; }
 body[data-background="none"] { background-color: #edf4f8; background-image: none; }
-body[data-background]:not([data-background="none"]) { background-color: #07121f; background-image: none; }
+body[data-background]:not([data-background="none"]):not([data-background="crystal"]) { background-color: #07121f; background-image: none; }
 body > header, body > main, body > footer { position: relative; z-index: 1; }
 .site-background { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .site-background::after { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(3, 18, 36, .04), rgba(3, 18, 36, .2)); content: ""; }

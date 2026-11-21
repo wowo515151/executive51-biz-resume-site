@@ -2,6 +2,7 @@
 (() => {
   const choices = [
     ["particle-constellation", "Particle constellation"],
+    ["crystal", "Crystal artwork"],
     ["fluid-ink", "Fluid ink"],
     ["vanta-net", "Vanta Net"],
     ["vanta-waves", "Vanta Waves"],
@@ -34,22 +35,8 @@
     "topologica": ["shader-runtime.js", "topologica.js"]
   };
   const isChoice = value => choices.some(([key]) => key === value);
-  const defaultForProfile = ({width, coarsePointer, cores, memory}) => {
-    if (width <= 600 || (width <= 820 && coarsePointer)) return "particle-constellation";
-    const knownLowSignal = (cores > 0 && cores <= 4) || (memory > 0 && memory <= 4);
-    if (knownLowSignal || !(cores > 0 || memory > 0)) return "particle-constellation";
-    return cores > 4 && (memory === 0 || memory > 4) ? "fluid-ink" : "particle-constellation";
-  };
-  const profile = () => ({
-    width: Math.min(innerWidth || 0, screen.width || innerWidth || 0),
-    coarsePointer: matchMedia("(pointer: coarse)").matches,
-    cores: Number(navigator.hardwareConcurrency) || 0,
-    memory: Number(navigator.deviceMemory) || 0
-  });
-  const defaultChoice = defaultForProfile(profile());
+  const defaultChoice = "particle-constellation";
   document.documentElement.dataset.backgroundDefault = defaultChoice;
-  // Keep the pure heuristic inspectable for device-profile QA.
-  window.SiteBackgroundDefaultForProfile = defaultForProfile;
 
   const init = () => {
     document.querySelectorAll(".primary-nav, .graph-toolbar").forEach(nav => {
@@ -85,8 +72,8 @@
 
     let stored = null;
     try { stored = localStorage.getItem("executive51-background"); } catch (_) {}
-    // Migrate the removed Crystal option and invalid values to the device default.
-    let selected = stored && stored !== "crystal" && isChoice(stored) ? stored : defaultChoice;
+    // Keep a visitor's saved selection, including Crystal from the earlier picker.
+    let selected = stored && isChoice(stored) ? stored : defaultChoice;
     const persist = value => { try { localStorage.setItem("executive51-background", value); } catch (_) {} };
     if (selected !== stored) persist(selected);
 
@@ -150,7 +137,7 @@
       if (save) persist(value);
       document.body.dataset.background = value;
       stop();
-      if (value === "none" || reducedMotion.matches) {
+      if (value === "none" || value === "crystal" || reducedMotion.matches) {
         changing = false;
         syncPicker();
         return;

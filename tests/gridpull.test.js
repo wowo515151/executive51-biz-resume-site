@@ -46,6 +46,18 @@ test("Statistics Canada WDS observations normalize dates and scale values", () =
   assert.throws(() => Gridpull.normalizeStatCanWDS([{ status: "SUCCESS", object: { productId: 1, vectorDataPoint: [] } }], 14100287), /unexpected data series/);
 });
 
+test("Statistics Canada WDS table rows are ordered chronologically for the preview", () => {
+  const table = Gridpull.normalizeStatCanWDS([{ status: "SUCCESS", object: {
+    productId: 17100009,
+    vectorDataPoint: [
+      { refPer: "2026-07-01", value: 42, scalarFactorCode: 0 },
+      { refPer: "2001-10-01", value: 17, scalarFactorCode: 0 },
+      { refPer: "2026-04-01", value: 41, scalarFactorCode: 0 }
+    ]
+  } }], 17100009);
+  assert.deepEqual(table.rows, [["2001-10-01", "17"], ["2026-04-01", "41"], ["2026-07-01", "42"]]);
+});
+
 test("JSON normalizer preserves cells in uneven array rows", () => {
   const table = Gridpull.normalizeJSON([["Jan", 10], ["Feb", 12, "revised"]]);
   assert.deepEqual(table.columns, ["Column 1", "Column 2", "Column 3"]);
@@ -79,7 +91,7 @@ test("public registry exposes only reviewed time-series datasets", () => {
       assert.ok(dataset.graphableFields.length > 0, `${site.id}/${dataset.id} declares numeric graph measures`);
     }
   }
-  assert.equal(Gridpull.getInfo("healthcanada", "gouda").dataset.name, "Nutrient amounts in Gouda cheese");
+  assert.throws(() => Gridpull.getInfo("healthcanada", "gouda"), /Unknown data provider/);
   assert.throws(() => Gridpull.getInfo("unknown", "dataset"), /Unknown data provider/);
 });
 
@@ -115,11 +127,15 @@ test("Données Québec DataStore normalizer validates the resource and requested
   assert.throws(() => Gridpull.normalizeCKANDatastore({ success: true, result: { resource_id: "resource-1", records: Array.from({ length: 101 }, () => ({})) } }, request), /more rows than requested/);
 });
 
-test("unverified dataset cannot make a network request", async () => {
-  await assert.rejects(Gridpull.load("toronto", "indicators", { fetch: () => { throw new Error("network should not be reached"); } }), /not been verified/);
+test("withheld provider routes cannot make a network request", async () => {
+  let requests = 0;
+  for (const [site, dataset] of [["toronto", "indicators"], ["novaScotia", "ozone"]]) {
+    await assert.rejects(Gridpull.load(site, dataset, { fetch: () => { requests++; throw new Error("network should not be reached"); } }), /Unknown data provider|Unknown dataset/);
+  }
+  assert.equal(requests, 0);
 });
 
-test("cross-sectional datasets are disabled before any provider request", async () => {
+test("cross-sectional dataset routes are absent before any provider request", async () => {
   let requests = 0;
   const fetch = () => { requests++; throw new Error("network should not be reached"); };
   for (const [site, dataset] of [
@@ -129,9 +145,9 @@ test("cross-sectional datasets are disabled before any provider request", async 
     ["quebec", "municipalities"],
     ["quebec", "finances"]
   ]) {
-    await assert.rejects(Gridpull.load(site, dataset, { fetch }), /disabled.*time-series/i, `${site}/${dataset} must not fetch`);
+    await assert.rejects(Gridpull.load(site, dataset, { fetch }), /Unknown data provider|Unknown dataset/, `${site}/${dataset} must not fetch`);
   }
-  await assert.rejects(Gridpull.load("healthcanada", "foods", { fetch }), /disabled.*time-series/i);
+  await assert.rejects(Gridpull.load("healthcanada", "foods", { fetch }), /Unknown data provider|Unknown dataset/);
   assert.equal(requests, 0);
 });
 

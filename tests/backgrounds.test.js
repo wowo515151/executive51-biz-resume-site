@@ -9,33 +9,78 @@ const site = path.join(root, "site");
 const managerPath = path.join(site, "site-backgrounds.js");
 const manager = fs.readFileSync(managerPath, "utf8");
 
-function defaultForProfile(profile) {
+function bootBackground({stored = null, reducedMotion = true, width = 1440, cores = 8, memory = 8} = {}) {
+  const listeners = {};
+  const selects = [];
+  const nav = {querySelector: () => null, append() {}};
+  const makeElement = tag => ({
+    tagName: tag,
+    children: [],
+    dataset: {},
+    append(child) { this.children.push(child); },
+    setAttribute() {},
+    addEventListener(type, callback) { this[`on${type}`] = callback; },
+    replaceChildren(...children) { this.children = children; }
+  });
   const document = {
     readyState: "loading",
     documentElement: {dataset: {}},
-    addEventListener() {}
+    body: {dataset: {}, prepend(layer) { this.layer = layer; }},
+    head: {append() {}},
+    hidden: false,
+    addEventListener(type, callback) { listeners[type] = callback; },
+    querySelectorAll(selector) {
+      if (selector === ".primary-nav, .graph-toolbar") return [nav];
+      if (selector === ".background-picker select") return selects;
+      return [];
+    },
+    createElement(tag) {
+      const element = makeElement(tag);
+      if (tag === "select") selects.push(element);
+      return element;
+    },
+    createTextNode: text => ({text})
   };
+  const saved = {value: stored};
   const context = {
     document,
     window: {},
-    navigator: {hardwareConcurrency: profile.cores, deviceMemory: profile.memory},
-    screen: {width: profile.width},
-    innerWidth: profile.width,
-    matchMedia: () => ({matches: profile.coarsePointer}),
+    navigator: {hardwareConcurrency: cores, deviceMemory: memory},
+    screen: {width},
+    innerWidth: width,
+    localStorage: {
+      getItem() { return saved.value; },
+      setItem(_key, value) { saved.value = value; }
+    },
+    matchMedia(query) { return {matches: query.includes("prefers-reduced-motion") && reducedMotion, addEventListener() {}}; }
   };
   vm.runInNewContext(manager, context, {filename: managerPath, timeout: 1000});
-  return context.window.SiteBackgroundDefaultForProfile(profile);
+  listeners.DOMContentLoaded();
+  return {document, selects, saved};
 }
 
-test("background defaults favor phones and low-end devices", () => {
-  assert.equal(defaultForProfile({width: 390, coarsePointer: false, cores: 8, memory: 8}), "particle-constellation");
-  assert.equal(defaultForProfile({width: 800, coarsePointer: true, cores: 8, memory: 8}), "particle-constellation");
-  assert.equal(defaultForProfile({width: 1440, coarsePointer: false, cores: 4, memory: 8}), "particle-constellation");
-  assert.equal(defaultForProfile({width: 1440, coarsePointer: false, cores: 8, memory: 4}), "particle-constellation");
-  assert.equal(defaultForProfile({width: 1440, coarsePointer: false, cores: 8, memory: 8}), "fluid-ink");
-  assert.equal(defaultForProfile({width: 1440, coarsePointer: false, cores: 8, memory: 0}), "fluid-ink");
-  assert.equal(defaultForProfile({width: 1440, coarsePointer: false, cores: 0, memory: 8}), "particle-constellation");
-  assert.equal(defaultForProfile({width: 1440, coarsePointer: false, cores: 0, memory: 0}), "particle-constellation");
+test("particle constellation is the shared default on every device profile", () => {
+  for (const profile of [
+    {width: 390, cores: 8, memory: 8},
+    {width: 800, cores: 4, memory: 4},
+    {width: 1440, cores: 16, memory: 16},
+    {width: 1440, cores: 0, memory: 0}
+  ]) {
+    const {document, selects, saved} = bootBackground(profile);
+    assert.equal(document.documentElement.dataset.backgroundDefault, "particle-constellation");
+    assert.equal(document.body.dataset.background, "particle-constellation");
+    assert.equal(selects[0].value, "particle-constellation");
+    assert.equal(saved.value, "particle-constellation");
+  }
+});
+
+test("saved Crystal choice and artwork survive the default update", () => {
+  const {document, selects, saved} = bootBackground({stored: "crystal"});
+  assert.equal(document.body.dataset.background, "crystal");
+  assert.equal(selects[0].value, "crystal");
+  assert.equal(saved.value, "crystal");
+  const css = fs.readFileSync(path.join(site, "site.css"), "utf8");
+  assert.match(css, /body\[data-background="crystal"\][^{]*\{[^}]*background-image: url\("assets\/large2\.png"\)/);
 });
 
 test("the shared picker includes every pack effect and local dependency", () => {
@@ -43,7 +88,8 @@ test("the shared picker includes every pack effect and local dependency", () => 
   assert.ok(block, "choice list is present");
   const labels = [...block.matchAll(/\["([^"]+)", "([^"]+)"\]/g)].map(match => [match[1], match[2]]);
   assert.deepEqual(labels, [
-    ["particle-constellation", "Particle constellation"], ["fluid-ink", "Fluid ink"],
+    ["particle-constellation", "Particle constellation"], ["crystal", "Crystal artwork"],
+    ["fluid-ink", "Fluid ink"],
     ["vanta-net", "Vanta Net"], ["vanta-waves", "Vanta Waves"], ["vanta-globe", "Vanta Globe"],
     ["vanta-dots", "Vanta Dots"], ["vanta-rings", "Vanta Rings"], ["vanta-halo", "Vanta Halo"],
     ["gradient-drift", "Gradient drift"], ["canvas-nest", "Canvas nest"],
@@ -56,12 +102,13 @@ test("the shared picker includes every pack effect and local dependency", () => 
     "canvas-nest.js", "fss.js", "shader-runtime.js", "star-nest.js", "procedural-ocean.js", "topologica.js"
   ]) assert.ok(fs.existsSync(path.join(site, "backgrounds", asset)), `missing ${asset}`);
   assert.match(manager, /canvas = makeCanvas\(\)/, "each effect transition receives a fresh canvas");
-  assert.doesNotMatch(block, /crystal/i, "removed Crystal choice is not exposed");
+  assert.match(manager, /value === "crystal" \|\| reducedMotion\.matches/, "Crystal remains selectable without starting an effect engine");
 });
 
 test("all site HTML stays on the shared navigation and stylesheet", () => {
   const pages = fs.readdirSync(site).filter(file => file.endsWith(".html"));
-  assert.equal(pages.length, 17);
+  for (const page of ["SiteStatisticsCanada.html", "SiteDonneesQuebec.html", "DataPopulationEstimates.html", "DataLabourForce.html", "DataConsumerPrices.html", "DataQuebecPopulationProjections.html"]) assert.ok(pages.includes(page), `${page} is included in the site HTML review`);
+  assert.equal(pages.some((page) => /NovaScotia|CNFApple|CNFSalmon|CNFNutrientAmounts|QuebecMunicipal/.test(page)), false, "withheld datasets are outside the site upload folder");
   for (const page of pages) {
     const html = fs.readFileSync(path.join(site, page), "utf8");
     assert.match(html, /site-nav\.js/, `${page} imports the shared navigation`);
@@ -76,5 +123,6 @@ test("shared and graph content panes retain alpha transparency", () => {
   assert.match(css, /--pane: rgba\(250, 253, 255, \.91\)/);
   assert.match(graphCss, /rgba\(250,253,255,\.91\)/);
   assert.match(graphComponent, /background:rgba\(255,255,255,\.91\)/);
-  assert.doesNotMatch(css, /background-image: url\("assets\/large2\.png"\)/);
+  assert.match(css, /body\[data-background="crystal"\].*background-image: url\("assets\/large2\.png"\)/);
+  assert.match(css, /body\[data-background\]:not\(\[data-background="none"\]\):not\(\[data-background="crystal"\]\)/);
 });

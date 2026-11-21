@@ -38,6 +38,7 @@
     status.textContent = "This source contains labels or reference fields but no approved numeric measure for graphing.";
   } else if (!info.dataset.verified || !info.dataset.fetchURL) {
     loadButton.disabled = true;
+    graph.setAttribute("data-disabled", "true");
     status.textContent = info.dataset.disabledReason || "This source is being checked. Dataset loading will be enabled after its public endpoint is verified.";
   }
   loadButton.addEventListener("click", async () => {
