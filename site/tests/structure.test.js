@@ -26,7 +26,7 @@ test("graph entry links reviewed provider pages, each with three unique data pag
   }
 });
 
-test("nine selected DataPages include the shared graph panel structure and no homepage link", () => {
+test("nine selected DataPages use shared panels and the homepage links only to the graph entry", () => {
   const providers = ["SiteStatisticsCanada.html", "SiteHealthCanada.html", "SiteDonneesQuebec.html"];
   const pages = providers.flatMap((provider) => [...read(provider).matchAll(/href="(Data[^"]+\.html)"/g)].map((match) => match[1]));
   assert.equal(new Set(pages).size, 9, "selected providers link nine unique datasets");
@@ -43,7 +43,8 @@ test("nine selected DataPages include the shared graph panel structure and no ho
   assert.ok(read("SiteHealthCanada.html").includes("https://open.canada.ca/data/en/dataset/1b6139bd-ed7e-4043-bc28-ff00e10f3109"), "Health Canada SitePage links the official CNF record");
   const graphComponent = read("GridGraph.js");
   for (const mode of ["bar", "line", "area", "scatter", "pie", "heatmap", "surface3d"]) assert.ok(graphComponent.includes(`"${mode}"`), `GridGraph exposes ${mode}`);
-  assert.equal(read("index.html").includes("graph.html"), false, "existing homepage remains unlinked until review");
+  assert.match(read("index.html"), /href="graph\.html">Explore data graphs/, "homepage exposes the reviewed graph entry");
+  assert.equal(/href="Data[^\"]+\.html"/.test(read("index.html")), false, "homepage does not link directly to dataset pages");
   assert.equal(/\bgraph\.html\b/.test(read("site-nav.js")), false, "shared navigation remains free of a graph link");
 });
 
