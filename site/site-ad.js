@@ -4,7 +4,7 @@
   // Keep the ad's message and destination in this one shared component source.
   const AD_COPY = {
     title: "Executive51",
-    description: "Cost effective agent operation for coding, web pages, research. Agents can also run apps so any form of computer work.",
+    description: "Cost effective agent operation for coding, web pages, research. Executive51 can also run apps so it can perform almost any form of computer work.",
     href: "index.html"
   };
 

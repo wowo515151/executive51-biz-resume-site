@@ -7,14 +7,18 @@ build step.
 
 ## Release sequence
 
-1. Publish the approved site-only commit through the existing repository
+1. From the integration worktree, run the offline regression suite:
+   `node --test tests/*.test.js`. It uses Node's built-in test runner and has no
+   package installation or network dependency.
+2. Publish the approved site-only commit through the existing repository
    process. Keep unrelated graph work out of the branch; do not create another
    workflow or deployment path.
-2. In the repository's **Actions** tab, select **Deploy Executive51 to Azure
+3. In the repository's **Actions** tab, select **Deploy Executive51 to Azure
    Static Web Apps**, choose **Run workflow** for the approved branch, and wait
-   for a successful run. The workflow reads the existing deployment secret;
-   never print, copy, or add that value to a file.
-3. Open `https://executive51.biz/` in a signed-out browser. If the browser shows
+   for a successful run. The workflow checks out the selected branch, runs the
+   same offline suite, and skips upload if a test fails. It reads the existing
+   deployment secret; never print, copy, or add that value to a file.
+4. Open `https://executive51.biz/` in a signed-out browser. If the browser shows
    a certificate warning, stop and report it; do not bypass the warning or
    switch to plaintext HTTP.
 

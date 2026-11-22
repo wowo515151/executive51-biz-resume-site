@@ -12,6 +12,7 @@ const activePages = ["DataPopulationEstimates.html", "DataLabourForce.html", "Da
 test("every shipped HTML page uses the single shared accessible ad component", () => {
   const pages = fs.readdirSync(site).filter((name) => name.endsWith(".html"));
   const component = read("site-ad.js");
+  const stylesheet = read("site.css");
   assert.equal(pages.length, 11, "the active site has the expected public HTML pages");
   for (const name of pages) {
     const html = read(name);
@@ -21,7 +22,10 @@ test("every shipped HTML page uses the single shared accessible ad component", (
     if (/^Data/.test(name)) assert.match(html, /<site-ad class="graph-ad-panel"><\/site-ad>/, `${name} keeps the existing graph ad placement`);
     else assert.match(html, /<site-ad class="site-ad-slot"><\/site-ad>/, `${name} places its ad at the bottom of main`);
   }
-  assert.match(component, /Cost effective agent operation for coding, web pages, research\. Agents can also run apps so any form of computer work\./, "the centralized copy matches the requested message");
+  assert.match(component, /Cost effective agent operation for coding, web pages, research\. Executive51 can also run apps so it can perform almost any form of computer work\./, "the centralized copy matches the requested message");
+  const adDescriptionStyle = stylesheet.match(/\.site-ad p\s*\{([^}]*)\}/)?.[1] || "";
+  assert.match(adDescriptionStyle, /margin:\s*0\s*;/, "the ad description keeps its normal paragraph margin");
+  assert.doesNotMatch(adDescriptionStyle, /max-width/, "the ad description can use the full panel width");
   assert.match(component, /aria-labelledby/);
   assert.match(component, /createElement\("aside"\)/, "the rendered ad is a semantic complementary region");
   assert.match(component, /AD_COPY/);
@@ -54,7 +58,7 @@ test("shared ad component renders its centralized values into an accessible DOM"
   assert.equal(label.id, aside.attributes["aria-labelledby"]);
   assert.equal(heading.children[0].textContent, "Executive51");
   assert.equal(heading.children[0].href, "index.html");
-  assert.equal(description.textContent, "Cost effective agent operation for coding, web pages, research. Agents can also run apps so any form of computer work.");
+  assert.equal(description.textContent, "Cost effective agent operation for coding, web pages, research. Executive51 can also run apps so it can perform almost any form of computer work.");
 });
 
 test("graph directory links only providers with reviewed time-series datasets", () => {
@@ -142,4 +146,6 @@ test("Azure deployment pins checkout immutably and does not persist its token", 
   const workflow = fs.readFileSync(path.resolve(site, "..", ".github", "workflows", "azure-static-web-apps.yml"), "utf8");
   assert.match(workflow, /uses: actions\/checkout@[a-f0-9]{40}/, "checkout uses a full commit SHA");
   assert.match(workflow, /persist-credentials: false/, "the deployment job does not retain the checkout token");
+  assert.match(workflow, /- name: Run offline regression suite\s+run: node --test tests\/\*\.test\.js/, "the manual upload runs offline tests before deployment");
+  assert.ok(workflow.indexOf("Run offline regression suite") < workflow.indexOf("Deploy to Azure Static Web Apps"), "tests gate the deployment step");
 });
