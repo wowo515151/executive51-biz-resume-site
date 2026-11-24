@@ -16,9 +16,11 @@ test("every shipped HTML page uses the single shared accessible ad component", (
   assert.equal(pages.length, 12, "the active site has the expected public HTML pages");
   for (const name of pages) {
     const html = read(name);
-    assert.equal((html.match(/<site-ad\b/g) || []).length, 1, `${name} has exactly one ad slot`);
+    const expectedAdSlots = name === "alberta-managed-ai-companies.html" ? 2 : 1;
+    assert.equal((html.match(/<site-ad\b/g) || []).length, expectedAdSlots, `${name} has the expected shared ad slots`);
     assert.equal((html.match(/site-ad\.js/g) || []).length, 1, `${name} loads the shared ad source once`);
     assert.ok(html.indexOf("<site-ad") < html.indexOf("<footer"), `${name} places the ad before its footer`);
+    if (name === "alberta-managed-ai-companies.html") assert.match(html, /<site-ad class="site-ad-slot managed-directory-top-ad"><\/site-ad>\s*<ol class="directory-list managed-company-list"/, "the second directory ad appears directly above the company list");
     if (/^Data/.test(name)) assert.match(html, /<site-ad class="graph-ad-panel"><\/site-ad>/, `${name} keeps the existing graph ad placement`);
     else assert.match(html, /<site-ad class="site-ad-slot"><\/site-ad>/, `${name} places its ad at the bottom of main`);
   }

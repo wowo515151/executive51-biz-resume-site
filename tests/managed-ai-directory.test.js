@@ -15,7 +15,9 @@ test("managed AI directory preserves all providers and source evidence in the sh
   assert.match(html, /78 providers with managed-operation evidence/);
   assert.match(html, /22 with implementation and ongoing-support evidence/);
   assert.match(html, /<site-nav current="managed-ai"><\/site-nav>/);
+  assert.match(html, /<site-ad class="site-ad-slot managed-directory-top-ad"><\/site-ad>\s*<ol class="directory-list managed-company-list"/);
   assert.match(html, /<site-ad class="site-ad-slot"><\/site-ad>/);
+  assert.equal((html.match(/<site-ad class="site-ad-slot/g) || []).length, 2, "the shared ad appears near the list and at the page end");
   assert.equal((html.match(/site-ad\.js/g) || []).length, 1);
   const scriptSources = [...html.matchAll(/<script\b[^>]*src="([^"]+)"[^>]*>/g)].map((match) => match[1]);
   assert.deepEqual(scriptSources, ["site-nav.js", "site-ad.js", "managed-ai-directory.js"]);

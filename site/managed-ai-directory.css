@@ -19,6 +19,7 @@
 .managed-button.secondary { background: #fff; color: var(--blue); }
 .managed-button:hover, .managed-button:focus-visible { filter: brightness(.94); }
 .managed-result-count { font-size: 14px !important; }
+.managed-directory-top-ad { width: 100%; margin: 22px 0; }
 .managed-company-list > li[hidden] { display: none; }
 .managed-company-card { padding: 20px; }
 .managed-company-card .directory-title-row > div { min-width: 0; }
