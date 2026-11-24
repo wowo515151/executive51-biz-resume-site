@@ -18,5 +18,5 @@ test("homepage links to the live Gen4D demo and its source repository", () => {
     assert.match(attributes, /target="_blank"/, "external links open in a new tab");
     assert.match(attributes, /rel="noopener noreferrer"/, "external tabs cannot access the opener");
   }
-  assert.match(html, /<div class="section-index"><span>08<\/span><span class="index-line"><\/span>Contact<\/div>/, "the contact section follows the new seventh section");
+  assert.match(html, /<div class="section-index"><span>07<\/span><span class="index-line"><\/span>Contact<\/div>/, "the contact section is the seventh section");
 });
