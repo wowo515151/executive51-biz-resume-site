@@ -5,6 +5,7 @@ class SiteNavigation extends HTMLElement {
       ["resume", "index.html", "Resume"],
       ["payments", "payments.html", "Payments"],
       ["alberta", "AlbertaDevs.html", "Alberta"],
+      ["managed-ai", "alberta-managed-ai-companies.html", "Managed AI"],
       ["contact", "contact.html", "Contact"],
     ];
     const navigation = document.createElement("nav");
