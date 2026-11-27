@@ -13,7 +13,7 @@ test("every shipped HTML page uses the single shared accessible ad component", (
   const pages = fs.readdirSync(site).filter((name) => name.endsWith(".html"));
   const component = read("site-ad.js");
   const stylesheet = read("site.css");
-  assert.equal(pages.length, 12, "the active site has the expected public HTML pages");
+  assert.equal(pages.length, 13, "the active site has the expected public HTML pages");
   for (const name of pages) {
     const html = read(name);
     const expectedAdSlots = name === "alberta-managed-ai-companies.html" ? 2 : 1;
